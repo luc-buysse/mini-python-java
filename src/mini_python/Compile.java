@@ -5,11 +5,76 @@ class Compile {
   static boolean debug = false;
 
   static X86_64 file(TFile f) {
-    return null;
+    MyTVisitor visitor = new MyTVisitor();
+    visitor.visit(f);
+    // Generate X86_64 output based on the visitor's result
+    X86_64 output = visitor.getResult();
+    return output;
   }
 }
 
-class MyVisitor implements TVisitor {
+class MyTVisitor implements TVisitor {
+  private X86_64 result;
+
+  public MyTVisitor() {
+    result = new X86_64();
+  }
+
+  public X86_64 getResult() {
+    return result;
+  }
+
+  public void visit(TFile f) {
+    // Generate code for each function
+    for (TDef d : f.l) {
+      visit(d);
+    }
+
+    // Generate code for the preimplanted function
+
+    // print
+    result.label(d.f.name);
+    result.pushq("%rbp");
+    result.movq("%rsp", "%rbp");
+    // gerer les arguments
+    TODO
+
+    // Allocate space for local variables
+    TODO
+    //utiliser l'env créé par le typeur pour connaitre la taille des variables locales et utiliser les registres
+
+    // Generate code for the body of the function
+    d.body.accept(this);
+
+    // Restore the stack pointer and return
+    result.popq("%rbp");
+    result.ret();
+
+    // len
+
+    // list
+
+    // range
+  } 
+
+  public void visit(TDef d) {
+    result.label(d.f.name);
+    result.pushq("%rbp");
+    result.movq("%rsp", "%rbp");
+    // gerer les arguments
+    TODO
+
+    // Allocate space for local variables
+    TODO
+
+    // Generate code for the body of the function
+    d.body.accept(this);
+
+    // Restore the stack pointer and return
+    result.popq("%rbp");
+    result.ret();
+  }
+
   public void visit(Cnone c) {
 
   }
