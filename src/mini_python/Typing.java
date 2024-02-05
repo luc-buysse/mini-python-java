@@ -83,6 +83,11 @@ class MyVisitor implements Visitor {
   public TDef visit(Def d) {
     env = new Environment(d.f.id, env);
 
+    // Check for unique function name
+    if(fenv.functions.containsKey(d.f.id)) {
+      Typing.error(d.f.loc, "duplicate function " + d.f.id);
+    }
+
     // Check parameters and add them to the environment
     Set<String> params = new HashSet<String>();
     LinkedList<Variable> variables = new LinkedList<Variable>();
