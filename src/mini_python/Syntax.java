@@ -345,6 +345,7 @@ class Variable {
 class Function {
   final String name;
   final LinkedList<Variable> params;
+  Environment env; // will be used later, during code generation
 
   Function(String name, LinkedList<Variable> params) {
     this.name = name;

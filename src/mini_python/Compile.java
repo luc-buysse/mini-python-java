@@ -31,9 +31,14 @@ class MyTVisitor implements TVisitor {
     }
 
     // Generate code for the preimplanted function
+    implementPrint();
+    implementRange();
+    implementLen();
+    implementList();
+  }
 
-    // print
-    result.label(d.f.name);
+  private void implementLen() {
+    result.label("len");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
     // gerer les arguments
@@ -41,21 +46,67 @@ class MyTVisitor implements TVisitor {
 
     // Allocate space for local variables
     TODO
-    //utiliser l'env créé par le typeur pour connaitre la taille des variables locales et utiliser les registres
 
     // Generate code for the body of the function
-    d.body.accept(this);
+    TODO
 
     // Restore the stack pointer and return
     result.popq("%rbp");
     result.ret();
+  }
 
-    // len
+  private void implementList() {
+    result.label("list");
+    result.pushq("%rbp");
+    result.movq("%rsp", "%rbp");
+    // gerer les arguments
+    TODO
 
-    // list
+    // Allocate space for local variables
+    TODO
 
-    // range
-  } 
+    // Generate code for the body of the function
+    TODO
+    // Restore the stack pointer and return
+    result.popq("%rbp");
+    result.ret();
+  }
+
+  private void implementRange() {
+    result.label("range");
+    result.pushq("%rbp");
+    result.movq("%rsp", "%rbp");
+    // gerer les arguments
+    TODO
+
+    // Allocate space for local variables
+    TODO
+
+    // Generate code for the body of the function
+    TODO
+
+    // Restore the stack pointer and return
+    result.popq("%rbp");
+    result.ret();
+  }
+
+  private void implementPrint() {
+    result.label("print");
+    result.pushq("%rbp");
+    result.movq("%rsp", "%rbp");
+    // gerer les arguments
+    TODO
+
+    // Allocate space for local variables
+    TODO
+
+    // Generate code for the body of the function
+    TODO
+
+    // Restore the stack pointer and return
+    result.popq("%rbp");
+    result.ret();
+  }
 
   public void visit(TDef d) {
     result.label(d.f.name);
