@@ -50,6 +50,23 @@ class MyVisitor implements Visitor {
   MyVisitor() {
     super();
     this.env = rootEnv;
+
+    // ****** Add basic functions to the function environment
+
+    // len(list)
+    LinkedList<Variable> l = new LinkedList<Variable>();
+    l.add(Variable.mkVariable("list"));
+    fenv.functions.put("len", new Function("len", l));
+    
+    // list(range)
+    l = new LinkedList<Variable>();
+    l.add(Variable.mkVariable("range"));
+    fenv.functions.put("list", new Function("list", l));
+
+    // range(n)
+    l = new LinkedList<Variable>();
+    l.add(Variable.mkVariable("n"));
+    fenv.functions.put("range", new Function("range", l));
   }
 
   public TFile visit(File f) {
