@@ -89,13 +89,11 @@ class MyVisitor implements Visitor {
     }
 
     // Check parameters and add them to the environment
-    Set<String> params = new HashSet<String>();
     LinkedList<Variable> variables = new LinkedList<Variable>();
     for(Ident i : d.l) {
-      if(params.contains(i.id)) {
+      if(env.variables.contains(i.id)) {
         Typing.error(i.loc, "duplicate parameter " + i.id);
       }
-      params.add(i.id);
       env.variables.add(i.id);
       variables.add(Variable.mkVariable(i.id));
     }
