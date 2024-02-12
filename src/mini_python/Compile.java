@@ -7,6 +7,7 @@ class Compile {
   static X86_64 file(TFile f) {
     MyTVisitor visitor = new MyTVisitor();
     visitor.visit(f);
+
     // Generate X86_64 output based on the visitor's result
     X86_64 output = visitor.getResult();
     return output;
@@ -112,10 +113,35 @@ class MyTVisitor implements TVisitor {
     result.label(d.f.name);
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
-    // gerer les arguments
-    TODO
 
     // Allocate space for local variables
+    LinkedHashMap<String, Integer> sortedMap = d.f.env.variables.entrySet()
+      .stream()
+      .sorted(d.f.env.variables.Entry.comparingByValue())
+      .collect(
+          java.util.stream.Collectors.toMap(
+              d.f.env.variables.Entry::getKey, 
+              d.f.env.variables.Entry::getValue, 
+              (oldValue, newValue) -> oldValue, LinkedHashMap::new
+          )
+      );
+    Iterator<String> keyIterator = sortedMap.keySet().iterator();
+
+    HashMap<String, String> allocation = new HashMap<String, String>();
+
+    // caller saved registers
+    while (keyIterator.hasNext()) {
+      String key = keyIterator.next();
+      TODO
+    }
+
+    // stack
+    while (keyIterator.hasNext()) {
+      String key = keyIterator.next();
+      TODO
+    }
+
+    // gerer les arguments
     TODO
 
     // Generate code for the body of the function
