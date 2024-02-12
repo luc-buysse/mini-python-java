@@ -2,11 +2,10 @@ package mini_python;
 
 import java.util.*;
 
-
 class Environment {
-  public String functionName;
-  public Set<String> variables = new HashSet<String>();
-  public Environment parent;
+  final String functionName;
+  final Set<String> variables = new HashSet<String>();
+  final Environment parent;
 
   Environment(String functionName, Environment parent) {
     this.functionName = functionName;
@@ -31,7 +30,7 @@ class Typing {
 
   static TFile file(File f) {
     MyVisitor v = new MyVisitor();
-    return v.visit(f);
+    return v.entry(f);
   }
 }
 
@@ -44,8 +43,6 @@ class MyVisitor implements Visitor {
   Constant cst;
   TExpr expr;
   TStmt stmt;
-  TDef def;
-  TFile file;
 
   MyVisitor() {
     super();
@@ -69,7 +66,7 @@ class MyVisitor implements Visitor {
     fenv.functions.put("range", new Function("range", l));
   }
 
-  public TFile visit(File f) {
+  public TFile entry(File f) {
     TFile file = new TFile();
     for(Def d : f.l) {
       file.l.add(visit(d));
@@ -160,10 +157,18 @@ class MyVisitor implements Visitor {
 
   public void visit(Ecall e) {
     try {
-      // Check the number of arguments
       Function f = fenv.functions.get(e.f.id);
+
+      // Check the number of arguments
       if(e.l.size() != f.params.size()) {
         Typing.error(e.f.loc, "wrong number of arguments for function " + e.f.id);
+      }
+
+      // If the function is list, check that range is used inside
+      if(f.name.equals("list")) {
+        if(e.l.size() != 1 || !(e.l.get(0) instanceof Ecall) || !((Ecall)e.l.get(0)).f.id.equals("range")) {
+          Typing.error(e.f.loc, "list function can only be used with range");
+        }
       }
       
       // Evaluate the arguments
@@ -175,7 +180,6 @@ class MyVisitor implements Visitor {
       
       // Build the output
       expr = new TEcall(f, l);
-
     } catch (Exception me) {
       // Function undefined
       Typing.error(e.f.loc, "undefined function " + e.f.id);
@@ -237,6 +241,7 @@ class MyVisitor implements Visitor {
   }
 
   public void visit(Sfor s) {
+    env.variables.add(s.x.id);
     s.e.accept(this);
     TExpr e = expr;
     s.s.accept(this);

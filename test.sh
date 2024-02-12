@@ -264,7 +264,9 @@ echo "Interpretation:";
 percent=`expr 100 \* $score_test / $max`;
 echo "Behavior: $score_test/$max : $percent%";
 percent=`expr 100 \* $score_out / $max`;
-echo "Expected output: $score_out/$max : $percent%";}
+echo "Expected output: $score_out/$max : $percent%";
+
+}
 
 case $option in
     "-1" )

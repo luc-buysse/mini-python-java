@@ -9,7 +9,7 @@ class Compile {
   }
 }
 
-class MyVisitor implements TVisitor {
+class CompileVisitor implements TVisitor {
   public void visit(Cnone c) {
 
   }
