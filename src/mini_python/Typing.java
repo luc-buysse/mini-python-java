@@ -102,6 +102,9 @@ class MyVisitor implements Visitor {
     // Check the body
     d.s.accept(this);
 
+    // save the environment
+    f.env = env;
+
     // Restore the environment
     env = env.parent;
 
