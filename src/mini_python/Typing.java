@@ -5,12 +5,19 @@ import java.util.*;
 
 class Environment {
   public String functionName;
-  public Set<String> variables = new HashSet<String>();
+  public Hashmap<String,int> variables = new HashMap<String,int>();
   public Environment parent;
 
   Environment(String functionName, Environment parent) {
     this.functionName = functionName;
     this.parent = parent;
+  }
+
+  public Environment copy() {
+    Environment newEnv = new Environment(this.functionName, this.parent);
+    newEnv.variables = new HashMap<String,int>(this.variables);
+
+    return newEnv;
   }
 }
 
@@ -91,10 +98,10 @@ class MyVisitor implements Visitor {
     // Check parameters and add them to the environment
     LinkedList<Variable> variables = new LinkedList<Variable>();
     for(Ident i : d.l) {
-      if(env.variables.contains(i.id)) {
+      if(env.variables.containsKey(i.id)) {
         Typing.error(i.loc, "duplicate parameter " + i.id);
       }
-      env.variables.add(i.id);
+      env.variables.put(i.id, 1);
       variables.add(Variable.mkVariable(i.id));
     }
 
@@ -106,7 +113,7 @@ class MyVisitor implements Visitor {
     d.s.accept(this);
 
     // save the environment
-    f.env = env;
+    f.env = env.copy();
 
     // Restore the environment
     env = env.parent;
@@ -151,7 +158,8 @@ class MyVisitor implements Visitor {
   public void visit(Eident e) {
     Environment ie = env;
     while (ie != null) {
-      if (ie.variables.contains(e.x.id)) {
+      if (ie.variables.containsKey(e.x.id)) {
+        ie.variables.put(e.x.id, 1 + ie.variables.get(e.x.id));
         expr = new TEident(Variable.mkVariable(e.x.id));
         return;
       }
@@ -221,7 +229,9 @@ class MyVisitor implements Visitor {
     TExpr e = expr;
     
     Variable v = Variable.mkVariable(s.x.id);
-    env.variables.add(v.name);
+    env.variables.get(v.name)==null ?
+      env.variables.put(v.name, 1) :
+      env.variables.put(v.name, 1 + env.variables.get(v.name));
     stmt = new TSassign(v, e);
   }
 
