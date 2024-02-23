@@ -1,5 +1,7 @@
 package mini_python;
 
+import java.util.LinkedHashMap;
+
 class Compile {
 
   static boolean debug = false;
@@ -230,9 +232,6 @@ class MyTVisitor implements TVisitor {
 
   }
   public void visit(TSset s) {
-
-  }
-  public void visit(TDef d) {
 
   }
 }
