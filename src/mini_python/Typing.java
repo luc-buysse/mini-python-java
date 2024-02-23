@@ -5,7 +5,7 @@ import java.util.*;
 
 class Environment {
   public String functionName;
-  public Hashmap<String,int> variables = new HashMap<String,int>();
+  public HashMap<String,Integer> variables = new HashMap<String,Integer>();
   public Environment parent;
 
   Environment(String functionName, Environment parent) {
@@ -15,7 +15,7 @@ class Environment {
 
   public Environment copy() {
     Environment newEnv = new Environment(this.functionName, this.parent);
-    newEnv.variables = new HashMap<String,int>(this.variables);
+    newEnv.variables = new HashMap<String,Integer>(this.variables);
 
     return newEnv;
   }
@@ -229,9 +229,8 @@ class MyVisitor implements Visitor {
     TExpr e = expr;
     
     Variable v = Variable.mkVariable(s.x.id);
-    env.variables.get(v.name)==null ?
-      env.variables.put(v.name, 1) :
-      env.variables.put(v.name, 1 + env.variables.get(v.name));
+    env.variables.put(v.name, (env.variables.get(v.name) == null) ? 1 : 1 + env.variables.get(v.name)) ;
+
     stmt = new TSassign(v, e);
   }
 
