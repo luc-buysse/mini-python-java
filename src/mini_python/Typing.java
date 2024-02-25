@@ -5,17 +5,21 @@ import java.util.*;
 
 class Environment {
   public String functionName;
-  public HashMap<String,Integer> variables = new HashMap<String,Integer>();
+  public HashMap<String,Integer> variables;
   public Environment parent;
+  public Set<String> global_var;
 
   Environment(String functionName, Environment parent) {
     this.functionName = functionName;
     this.parent = parent;
+    this.variables = new HashMap<String,Integer>();
+    this.global_var = new HashSet<String>();
   }
 
   public Environment copy() {
     Environment newEnv = new Environment(this.functionName, this.parent);
     newEnv.variables = new HashMap<String,Integer>(this.variables);
+    newEnv.global_var = new HashSet<String>(this.global_var);
 
     return newEnv;
   }
@@ -157,13 +161,18 @@ class MyVisitor implements Visitor {
 
   public void visit(Eident e) {
     Environment ie = env;
+    boolean isGlobal = false;
     while (ie != null) {
       if (ie.variables.containsKey(e.x.id)) {
-        ie.variables.put(e.x.id, 1 + ie.variables.get(e.x.id));
+        env.variables.put(e.x.id, 1 + env.variables.get(e.x.id));
         expr = new TEident(Variable.mkVariable(e.x.id));
+        if(isGlobal) {
+          env.global_var.add(e.x.id);
+        }
         return;
       }
       ie = ie.parent;
+      isGlobal = true;
     }
 
     Typing.error(e.x.loc, "undefined variable " + e.x.id);
