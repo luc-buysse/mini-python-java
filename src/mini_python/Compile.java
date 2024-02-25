@@ -58,11 +58,13 @@ class Compile {
 
 class MyTVisitor implements TVisitor {
   private X86_64 result;
-  private Context rootContext = new Context("main", null);
+  private Context rootContext;
   private Context context;
 
   public MyTVisitor() {
+    super();
     result = new X86_64();
+    rootContext = new Context("main", null);
   }
 
   public X86_64 getResult() {

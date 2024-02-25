@@ -164,7 +164,8 @@ class MyVisitor implements Visitor {
     boolean isGlobal = false;
     while (ie != null) {
       if (ie.variables.containsKey(e.x.id)) {
-        env.variables.put(e.x.id, 1 + env.variables.get(e.x.id));
+        // Increment the number of times the variable is used in env
+        env.variables.put(e.x.id, (env.variables.get(e.x.id) == null) ? 1 : 1 + env.variables.get(e.x.id));
         expr = new TEident(Variable.mkVariable(e.x.id));
         if(isGlobal) {
           env.global_var.add(e.x.id);
@@ -238,7 +239,7 @@ class MyVisitor implements Visitor {
     TExpr e = expr;
     
     Variable v = Variable.mkVariable(s.x.id);
-    env.variables.put(v.name, (env.variables.get(v.name) == null) ? 1 : 1 + env.variables.get(v.name)) ;
+    env.variables.put(v.name, (env.variables.get(v.name) == null) ? 1 : 1 + env.variables.get(v.name));
 
     stmt = new TSassign(v, e);
   }
