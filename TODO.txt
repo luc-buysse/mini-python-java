@@ -1,7 +1,7 @@
 TODO:
 1. DONE update equals methode of Function to use uid 
 2. DONE (useless because only know the name yet) check Typing call to use Function uid
-3. validate the Typing test
+3. WAITING FOR LUC ANSWER validate the Typing test
 4. use the uid in the label in Compile
 5. handle global variable memory assignment
 6. handle the memory initialisation in visit(Tdef d) in Compile

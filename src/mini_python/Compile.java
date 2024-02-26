@@ -1,6 +1,5 @@
 package mini_python;
 
-import java.sql.Array;
 import java.util.*;
 
 class Context {
@@ -165,7 +164,7 @@ class MyTVisitor implements TVisitor {
     }
 
     // handle initialisation of the memories (args and globals)
-    // TODO ;
+    // TODO
 
     d.body.accept(this);
 
@@ -327,7 +326,7 @@ class MyTVisitor implements TVisitor {
     result.subq("$8", "%rsp");
 
     // Generate code for the body of the function
-    // TODO ;
+    // TODO
     // faire différents cas en fonction du type en entrée
 
     // Restore the stack pointer and return
