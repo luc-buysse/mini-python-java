@@ -2,11 +2,10 @@ package mini_python;
 
 import java.sql.Array;
 import java.util.*;
-import java.util.function.ToDoubleBiFunction;
 
 class Context {
   public String functionName;
-  public HashMap<String, String> var_map = new HashMap<String,String>();
+  public HashMap<Integer, String> var_map = new HashMap<Integer,String>();
   public Context parent;
   public String[] work_register;
   private int work_register_index;
@@ -65,6 +64,7 @@ class MyTVisitor implements TVisitor {
     super();
     result = new X86_64();
     rootContext = new Context("main", null);
+    context = rootContext;
   }
 
   public X86_64 getResult() {
@@ -85,7 +85,6 @@ class MyTVisitor implements TVisitor {
         System.out.println("Compiling " + d.f.name);
       if (!d.f.name.equals("len") 
         && !d.f.name.equals("range") 
-        && !d.f.name.equals("print") 
         && !d.f.name.equals("list") 
         && !d.f.name.equals("my_malloc") // preimplanted functions
         && !d.f.name.equals("main")) // main function
@@ -112,37 +111,37 @@ class MyTVisitor implements TVisitor {
     }
 
     // Sort the variables by use
-    LinkedHashMap<String, Integer> sortedMap = d.f.env.variables.entrySet()
-      .stream()
-      .sorted(d.f.env.variables.Entry.comparingByValue())
-      .collect(
-          java.util.stream.Collectors.toMap(
-              d.f.env.variables.Entry::getKey, 
-              d.f.env.variables.Entry::getValue, 
-              (oldValue, newValue) -> oldValue, LinkedHashMap::new
-          )
-      );// a refaire
-    Iterator<String> keyIterator = sortedMap.keySet().iterator();
+    Iterator<Variable> keyIterator = d.f.sortedIterator();
 
     // %rax is the return value
     String[] registers = new String[]{"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9","%rbx", "%r10", "%r11", "%r12", "r13", "r14", "r15"};
 
     // caller saved registers
     int used_registers = 0;
+    LinkedList<Integer> reg_to_use = new LinkedList<Integer>(); // 
     while (keyIterator.hasNext() && used_registers < 13) {
-      String key = keyIterator.next();
-      context.var_map.put(key, registers[used_registers]);
+      Variable key = keyIterator.next();
+      if (d.f.params.contains(key) 
+        && d.f.params.indexOf(key) != used_registers) 
+        {// avoid swapping the registers uselessly
+        context.var_map.put(key.uid, registers[d.f.params.indexOf(key)]);
+        reg_to_use.add(used_registers);
+      // } else if (GLOBAL TODO) {
+
+      // } else {
+        context.var_map.put(key.uid, registers[used_registers]);
+      }
       used_registers = used_registers + 1;
     }
 
     // stack
     int stack_offset = 1;
     while (keyIterator.hasNext()) {
-      String key = keyIterator.next();
+      Variable key = keyIterator.next();
       if (d.f.params.contains(key) && d.f.params.indexOf(key) >= 6){
-        context.var_map.put(key, "-" + (d.f.params.indexOf(key) - 6 + 2)); // 6 is the number of register used for the arguments and 2 is the offset for the return address and the saved base pointer
+        context.var_map.put(key.uid, "-" + (d.f.params.indexOf(key) - 6 + 2)); // 6 is the number of register used for the arguments and 2 is the offset for the return address and the saved base pointer
       } else {
-        context.var_map.put(key, stack_offset + "");
+        context.var_map.put(key.uid, stack_offset + "");
         stack_offset = stack_offset + 1;
       }
     }
@@ -155,20 +154,25 @@ class MyTVisitor implements TVisitor {
     if (Compile.debug)
       System.out.println("Allocation: " + context.var_map);
 
-    // handle initialisation of the memories (args and globals)
-    int nb_args = d.f.params.size();
-    int nb_locals = d.f.env.variables.size();
-    // comment savoir si on a des variables globales ?
-
     // Generate code
     result.label(d.f.name);
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
+    // Save the calle saved registers
+    for (int i = (6 <= d.f.params.size())? 6 : d.f.params.size(); i < used_registers; i++) {
+      result.pushq(registers[i]);
+    }
+
+    // handle initialisation of the memories (args and globals)
+    // TODO ;
+
     d.body.accept(this);
 
     // restore the calle saved registers
-
+    for (int i = used_registers - 1; i >= ((6 <= d.f.params.size())? 6 : d.f.params.size()); i--) {
+      result.popq(registers[i]);
+    }
 
     // Restore the stack pointer and return*
     result.movq("%rbp", "%rsp");
@@ -246,6 +250,8 @@ class MyTVisitor implements TVisitor {
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
     result.andq("$-16", "%rsp");// 16-byte stack alignment
+
+    // calle save used registers TODO
     result.call("malloc");
     result.movq("%rbp", "%rsp");
     result.popq("%rbp");
@@ -321,7 +327,7 @@ class MyTVisitor implements TVisitor {
     result.subq("$8", "%rsp");
 
     // Generate code for the body of the function
-    TODO ;
+    // TODO ;
     // faire différents cas en fonction du type en entrée
 
     // Restore the stack pointer and return

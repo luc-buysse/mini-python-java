@@ -3,34 +3,6 @@ package mini_python;
 import java.util.*;
 
 
-class Environment {
-  public String functionName;
-  public HashMap<String,Integer> variables;
-  public Environment parent;
-  public Set<String> global_var;
-
-  Environment(String functionName, Environment parent) {
-    this.functionName = functionName;
-    this.parent = parent;
-    this.variables = new HashMap<String,Integer>();
-    this.global_var = new HashSet<String>();
-  }
-
-  public Environment copy() {
-    Environment newEnv = new Environment(this.functionName, this.parent);
-    newEnv.variables = new HashMap<String,Integer>(this.variables);
-    newEnv.global_var = new HashSet<String>(this.global_var);
-
-    return newEnv;
-  }
-}
-
-class FEnvironment {
-  public Map<String, Function> functions = new HashMap<String, Function>();
-
-  FEnvironment() {}
-}
-
 class Typing {
 
   static boolean debug = false;
@@ -47,10 +19,8 @@ class Typing {
 }
 
 class MyVisitor implements Visitor {
-  Environment rootEnv = new Environment("main", null);
-  Environment env;
-
-  FEnvironment fenv = new FEnvironment();
+  Function mainFunction = new Function("main", null);
+  Function currentFunction;
 
   Constant cst;
   TExpr expr;
@@ -60,24 +30,24 @@ class MyVisitor implements Visitor {
 
   MyVisitor() {
     super();
-    this.env = rootEnv;
+    this.currentFunction = mainFunction;
 
     // ****** Add basic functions to the function environment
 
     // len(list)
     LinkedList<Variable> l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("list"));
-    fenv.functions.put("len", new Function("len", l));
+    mainFunction.functions.add(new Function("len", l, mainFunction));
     
     // list(range)
     l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("range"));
-    fenv.functions.put("list", new Function("list", l));
+    mainFunction.functions.add(new Function("list", l, mainFunction));
 
     // range(n)
     l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("n"));
-    fenv.functions.put("range", new Function("range", l));
+    mainFunction.functions.add(new Function("range", l, mainFunction));
   }
 
   public TFile visit(File f) {
@@ -86,44 +56,42 @@ class MyVisitor implements Visitor {
       file.l.add(visit(d));
     }
     f.s.accept(this);
-    file.l.add(new TDef(new Function("main", new LinkedList<Variable>()), stmt));
+    file.l.add(new TDef(mainFunction, stmt));
 
     return file;
   }
 
   public TDef visit(Def d) {
-    env = new Environment(d.f.id, env);
-
     // Check for unique function name
-    if(fenv.functions.containsKey(d.f.id)) {
+    if(currentFunction.functions.contains(d.f.id)) {
       Typing.error(d.f.loc, "duplicate function " + d.f.id);
     }
 
+    // Create a new function environment
+    currentFunction = new Function(d.f.id, currentFunction);
+
     // Check parameters and add them to the environment
-    LinkedList<Variable> variables = new LinkedList<Variable>();
+    HashSet<String> tmp = new HashSet<String>();
     for(Ident i : d.l) {
-      if(env.variables.containsKey(i.id)) {
+      if(tmp.contains(i.id)) {
         Typing.error(i.loc, "duplicate parameter " + i.id);
       }
-      env.variables.put(i.id, 1);
-      variables.add(Variable.mkVariable(i.id));
+      Variable v = Variable.mkVariable(i.id);
+      currentFunction.variables.add(v);
+      currentFunction.params.add(v);
     }
-
-    // Add the function to the function environment
-    Function f = new Function(d.f.id, variables);
-    fenv.functions.put(d.f.id, f);
 
     // Check the body
     d.s.accept(this);
 
-    // save the environment
-    f.env = env.copy();
+    // Build the output
+    TDef def = new TDef(currentFunction, stmt);
 
     // Restore the environment
-    env = env.parent;
+    currentFunction = currentFunction.parent;
 
-    // Build the output
-    return new TDef(f, stmt);
+    // return the output
+    return def;
   }
 
   public void visit(Cnone c) {
@@ -160,19 +128,20 @@ class MyVisitor implements Visitor {
   }
 
   public void visit(Eident e) {
-    Environment ie = env;
+    Function fun = currentFunction;
     boolean isGlobal = false;
-    while (ie != null) {
-      if (ie.variables.containsKey(e.x.id)) {
-        // Increment the number of times the variable is used in env
-        env.variables.put(e.x.id, (env.variables.get(e.x.id) == null) ? 1 : 1 + env.variables.get(e.x.id));
-        expr = new TEident(Variable.mkVariable(e.x.id));
+    while (fun != null) {
+      if (fun.containsIdent(e.x.id)) {
+        // Increment the number of times the variable is used in env (for optimization purposes)
+        Variable v = currentFunction.getFromKey(e.x.id);
+        expr = new TEident(v);
         if(isGlobal) {
-          env.global_var.add(e.x.id);
+          v.isUsed();
+          v.is_global = true;
         }
         return;
       }
-      ie = ie.parent;
+      fun = fun.parent;
       isGlobal = true;
     }
 
@@ -180,27 +149,35 @@ class MyVisitor implements Visitor {
   }
 
   public void visit(Ecall e) {
-    try {
-      // Check the number of arguments
-      Function f = fenv.functions.get(e.f.id);
-      if(e.l.size() != f.params.size()) {
-        Typing.error(e.f.loc, "wrong number of arguments for function " + e.f.id);
-      }
-      
-      // Evaluate the arguments
-      LinkedList<TExpr> l = new LinkedList<TExpr>();
-      for (Expr e1 : e.l) {
-        e1.accept(this);
-        l.add(expr);
-      }
-      
-      // Build the output
-      expr = new TEcall(f, l);
+    // Find the function
+    Function f = currentFunction;
+    Function fun = f.getFunction(e.f.id);
 
-    } catch (Exception me) {
-      // Function undefined
+    while (fun == null && f.parent != null) {
+      f = f.parent;
+      fun = f.getFunction(e.f.id);
+    }
+
+    // Function undefined
+    if (fun == null) {
       Typing.error(e.f.loc, "undefined function " + e.f.id);
     }
+
+    // Check the number of arguments
+    if(e.l.size() != f.params.size()) {
+      Typing.error(e.f.loc, "wrong number of arguments for function " + e.f.id);
+    }
+      
+    // Evaluate the arguments
+    LinkedList<TExpr> l = new LinkedList<TExpr>();
+    for (Expr e1 : e.l) {
+      e1.accept(this);
+      l.add(expr);
+    }
+      
+    // Build the output
+    expr = new TEcall(fun, l);
+
   }
 
   public void visit(Eget e) {
@@ -238,8 +215,7 @@ class MyVisitor implements Visitor {
     s.e.accept(this);
     TExpr e = expr;
     
-    Variable v = Variable.mkVariable(s.x.id);
-    env.variables.put(v.name, (env.variables.get(v.name) == null) ? 1 : 1 + env.variables.get(v.name));
+    Variable v = currentFunction.getFromKey(s.x.id);
 
     stmt = new TSassign(v, e);
   }
@@ -262,7 +238,13 @@ class MyVisitor implements Visitor {
     s.e.accept(this);
     TExpr e = expr;
     s.s.accept(this);
-    stmt = new TSfor(Variable.mkVariable(s.x.id), e, stmt);
+    /* create a new variable for the for loop scope if the identifier is not already defined
+     * in the current scope else use the existing one 
+     */
+    Variable v = currentFunction.containsIdent(s.x.id)?
+      currentFunction.getFromKey(s.x.id) :
+      Variable.mkVariable(s.x.id);
+    stmt = new TSfor(v, e, stmt);
   }
 
   public void visit(Seval s) {

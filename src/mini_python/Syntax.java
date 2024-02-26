@@ -1,5 +1,5 @@
 package mini_python;
-import java.util.LinkedList;
+import java.util.*;
 
 /* Abstract Syntax of Mini-Python */
 
@@ -322,15 +322,19 @@ interface Visitor {
 
 /* In the typed trees, all the occurrences of the same variable
    point to a single object of the following class. */
-class Variable {
+class Variable implements Comparable<Variable>{
   final String name; // for debugging purposes
   int uid;           // unique id, for debugging purposes
-  int ofs;           // position wrt %rbp
+  int occ;           // number of occurrences, for code generation
+  String str;        // storage location either a register or an address relative to a reg, for code generation
+  Boolean is_global;    // is the variable global
 
   private Variable(String name, int uid) {
     this.name = name;
     this.uid  = uid;
-    this.ofs  = -1; // will be set later, during code generation
+    this.occ  = 1;
+    this.str  = ""; // will be set later, during code generation
+    this.is_global = false;
   }
 
   private static int id = 0;
@@ -338,18 +342,162 @@ class Variable {
   static Variable mkVariable(String name) {
     return new Variable(name, id++);
   }
+
+  public String toString() {
+    return name + "_" + uid + "stored at : " + str;
+  }
+
+  public void isUsed() {
+    occ++;
+  }
+
+  public boolean equals(Object o) {
+    if (o instanceof Variable) {
+      Variable v = (Variable) o;
+      return this.uid == v.uid;
+    }
+    return false;
+  }
+
+  @Override
+    public int compareTo(Variable other) {
+        return Integer.compare(this.occ, other.occ);
+    }
 }
 
 /* Similarly, all the occurrences of a given function all point
    to a single object of the following class. */
 class Function {
+  // identifier
   final String name;
-  final LinkedList<Variable> params;
-  Environment env; // will be used later, during code generation
+  final int uid; // unique id, for debugging purposes
+  // local variables and functions
+  final LinkedList<Variable> params; // formal parameters
+  final LinkedList<Variable> variables; // local variables
+  final LinkedList<Function> functions; // local functions
+  final Function parent; // the function that contains this one (mostly "main")
+  // local memory management for code generation
+  public String[] work_register;
+  private int work_register_index;
+  private int max_used_register;
 
-  Function(String name, LinkedList<Variable> params) {
+  private static int id = 0;
+
+  Function(String name, Function parent) {
     this.name = name;
+    this.uid = id++;
+    this.params = new LinkedList<Variable>();
+    this.variables = new LinkedList<Variable>();
+    this.functions = new LinkedList<Function>();
+    this.parent = parent;
+
+    if (parent != null)
+      parent.functions.add(this);
+
+    this.work_register_index = 0;
+    this.max_used_register = -1;
+  }
+
+  Function(String name, LinkedList<Variable> params, Function parent) {
+    this.name = name;
+    this.uid = id++;
     this.params = params;
+    this.variables = new LinkedList<Variable>();
+    this.functions = new LinkedList<Function>();
+    this.parent = parent;
+
+    if (parent != null)
+      parent.functions.add(this);
+
+    this.work_register_index = 0;
+    this.max_used_register = -1;
+  }
+
+  // for Typing
+  public boolean containsIdent(String key) {
+    for (Variable v : variables) {
+      if(v.name.equals(key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public Function getFunction(String key) {
+    for (Function f : functions) {
+      if(f.name.equals(key)) {
+        return f;
+      }
+    }
+    return null;
+  }
+
+  public Variable getFromKey(String key) {
+    // get a variable from the environment, if it doesn't exist, create it.
+    // Used during typing to keep track of the variables used in the fonction body
+    for (Variable v : variables) {
+      if(v.name.equals(key)) {
+        v.isUsed();
+        return v;
+      }
+    }
+    Variable v = Variable.mkVariable(key);
+    this.variables.add(v);
+    return v;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof Function) {
+      Function f = (Function) o;
+      return this.uid == f.uid;
+    }
+    if (o instanceof String) {
+      String s = (String) o;
+      return this.name.equals(s);
+    }
+    return false;
+  }
+
+  // for Compile
+  public Iterator<Variable> sortedIterator() {
+    // sort the variables by userate
+    Collections.sort(variables);
+    return variables.iterator();
+  }
+
+  public int geWorkRegister(MyTVisitor v) {
+    if (work_register_index < work_register.length) {
+      if (work_register_index > max_used_register) {
+        max_used_register = work_register_index;
+        if (Compile.debug) {
+          System.out.println("pushing " + work_register[work_register_index]);
+        }
+        v.getResult().pushq(work_register[work_register_index]);
+      }
+      work_register_index = work_register_index + 1;
+      return work_register_index - 1;
+    } else {
+      return -1;
+    }
+  }
+
+  public void freeWorkRegister() {
+    if (work_register_index > 0) {
+      work_register_index = work_register_index - 1;
+    }
+    else {
+      throw new Error("No register to free");
+    }
+  }
+
+  public void restoreUsedWorkRegister(MyTVisitor v) {
+    for (int i = max_used_register; i >= 0; i--) {
+      if (Compile.debug) {
+        System.out.println("Restoring register " + work_register[i]);
+      }
+      v.getResult().popq(work_register[i]);
+    }
   }
 }
 
