@@ -1,3 +1,4 @@
 #!/bin/bash
-exec java -cp ./lib/java-cup-11a-runtime.jar:./bin mini_python.Main $@
+
+exec java -cp ./lib/java-cup-11a-runtime.jar:./mini-python-java.jar mini_python.Main $@
 

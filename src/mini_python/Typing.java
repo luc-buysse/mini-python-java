@@ -4,7 +4,6 @@ import java.util.*;
 
 
 class Typing {
-
   static boolean debug = false;
 
   // use this method to signal typing errors
@@ -73,9 +72,12 @@ class MyVisitor implements Visitor {
     // Check parameters and add them to the environment
     HashSet<String> tmp = new HashSet<String>();
     for(Ident i : d.l) {
+      // check for duplicate parameters
       if(tmp.contains(i.id)) {
         Typing.error(i.loc, "duplicate parameter " + i.id);
       }
+      tmp.add(i.id);
+
       Variable v = Variable.mkVariable(i.id);
       currentFunction.variables.add(v);
       currentFunction.params.add(v);
@@ -164,7 +166,7 @@ class MyVisitor implements Visitor {
     }
 
     // Check the number of arguments
-    if(e.l.size() != f.params.size()) {
+    if(e.l.size() != fun.params.size()) {
       Typing.error(e.f.loc, "wrong number of arguments for function " + e.f.id);
     }
       
@@ -174,10 +176,20 @@ class MyVisitor implements Visitor {
       e1.accept(this);
       l.add(expr);
     }
+
+    // Check for list(range())
+    if(fun.name.equals("list")) {
+      try {
+        TEcall call = (TEcall) l.getFirst();
+        if(!call.f.name.equals("range"))
+          throw new Exception();
+      } catch (Exception ex) {
+        Typing.error(e.f.loc, "list() only accepts range() as argument");
+      }
+    }
       
     // Build the output
     expr = new TEcall(fun, l);
-
   }
 
   public void visit(Eget e) {
@@ -241,10 +253,9 @@ class MyVisitor implements Visitor {
     /* create a new variable for the for loop scope if the identifier is not already defined
      * in the current scope else use the existing one 
      */
-    Variable v = currentFunction.containsIdent(s.x.id)?
-      currentFunction.getFromKey(s.x.id) :
-      Variable.mkVariable(s.x.id);
-    stmt = new TSfor(v, e, stmt);
+    if(!currentFunction.getFromKey())
+      currentFunction.variables.add(Variable.mkVariable(s.x.id));
+    stmt = new TSfor(currentFunction.getFromKey(s.x.id), e, stmt);
   }
 
   public void visit(Seval s) {

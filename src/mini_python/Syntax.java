@@ -373,8 +373,8 @@ class Function {
   final int uid; // unique id, for debugging purposes
   // local variables and functions
   final LinkedList<Variable> params; // formal parameters
-  final LinkedList<Variable> variables; // local variables
-  final LinkedList<Function> functions; // local functions
+  final HashMap<String, Variable> variables; // local variables
+  final HashMap<String, Function> functions; // local functions
   final Function parent; // the function that contains this one (mostly "main")
   // local memory management for code generation
   public String[] work_register;
@@ -387,12 +387,12 @@ class Function {
     this.name = name;
     this.uid = id++;
     this.params = new LinkedList<Variable>();
-    this.variables = new LinkedList<Variable>();
-    this.functions = new LinkedList<Function>();
+    this.variables = new HashMap<String, Variable>();
+    this.functions = new HashMap<String, Function>();
     this.parent = parent;
 
     if (parent != null)
-      parent.functions.add(this);
+      parent.functions.put(name, this);
 
     this.work_register_index = 0;
     this.max_used_register = -1;
@@ -402,47 +402,27 @@ class Function {
     this.name = name;
     this.uid = id++;
     this.params = params;
-    this.variables = new LinkedList<Variable>();
-    this.functions = new LinkedList<Function>();
+    this.variables = new HashMap<String, Variable>();
+    this.functions = new HashMap<String, Function>();
     this.parent = parent;
 
     if (parent != null)
-      parent.functions.add(this);
+      parent.functions.put(name, this);
 
     this.work_register_index = 0;
     this.max_used_register = -1;
   }
 
-  // for Typing
-  public boolean containsIdent(String key) {
-    for (Variable v : variables) {
-      if(v.name.equals(key)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public Function getFunction(String key) {
-    for (Function f : functions) {
-      if(f.name.equals(key)) {
-        return f;
-      }
-    }
-    return null;
-  }
-
   public Variable getFromKey(String key) {
     // get a variable from the environment, if it doesn't exist, create it.
     // Used during typing to keep track of the variables used in the fonction body
-    for (Variable v : variables) {
-      if(v.name.equals(key)) {
-        v.isUsed();
-        return v;
-      }
+    if (variables.containsKey(key)) {
+      Variable v = variables.get(key);
+      v.isUsed();
+      return v;
     }
     Variable v = Variable.mkVariable(key);
-    this.variables.add(v);
+    this.variables.put(key, v);
     return v;
   }
 
@@ -457,13 +437,6 @@ class Function {
       return this.name.equals(s);
     }
     return false;
-  }
-
-  // for Compile
-  public Iterator<Variable> sortedIterator() {
-    // sort the variables by userate
-    Collections.sort(variables);
-    return variables.iterator();
   }
 
   public int geWorkRegister(MyTVisitor v) {

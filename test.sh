@@ -1,7 +1,5 @@
 #!/bin/bash
 
-shopt -s nullglob
-
 # script de test pour le projet de compilation
 
 option=$1
@@ -9,7 +7,6 @@ compilo=$2
 score=0
 max=0
 verbose=0
-
 
 echo "Testing $2"
 
