@@ -34,6 +34,9 @@ class MyVisitor implements Visitor {
 
     // ****** Add basic functions to the function environment
 
+    if (Typing.debug) {
+      System.out.println("Typing");
+    }
     // len(list)
     LinkedList<Variable> l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("list"));
