@@ -28,9 +28,9 @@ echo
 compile () {
 if [[ $verbose != 0 ]]; then
   echo Compile $1 $2
-  $compilo $1 $2;
+  bash $compilo $1 $2;
 else
-  $compilo $1 $2 > /dev/null 2>&1;
+  bash $compilo $1 $2 > /dev/null 2>&1;
 fi;
 }
 
@@ -276,18 +276,18 @@ case $option in
     "-i" )
         partie3i;;
     "-v1" )
-	verbose=1;
-	partie1;;
+        verbose=1;
+        partie1;;
     "-v2" )
-    	verbose=1;
+        verbose=1;
         partie2;;
     "-v3" )
-    	verbose=1;
+        verbose=1;
         partie3;;
     "-all" )
-    	partie1;
-    	partie2;
-    	partie3;;
+        partie1;
+        partie2;
+        partie3;;
     * )
         echo "usage : $0 <option> <compilo>"
         echo "spÃ©cifier une option parmi : "

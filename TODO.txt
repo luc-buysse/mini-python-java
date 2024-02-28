@@ -1,10 +1,11 @@
 TODO:
 1. DONE update equals methode of Function to use uid 
 2. DONE (useless because only know the name yet) check Typing call to use Function uid
-3. WAITING FOR LUC ANSWER validate the Typing test
+3. DONE validate the Typing test
 4. use the uid in the label in Compile
-5. handle global variable memory assignment
-6. handle the memory initialisation in visit(Tdef d) in Compile
-7. finish print in Compile
-8. implements the compilation of the Statments and Expressions
+5. implement the new eviction algo base
+6. handle global variable memory assignment
+7. handle the memory initialisation in visit(Tdef d) in Compile
+8. finish print in Compile
+9. implements the compilation of the Statments and Expressions
 

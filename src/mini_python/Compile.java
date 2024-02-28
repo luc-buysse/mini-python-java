@@ -64,6 +64,9 @@ class MyTVisitor implements TVisitor {
     result = new X86_64();
     rootContext = new Context("main", null);
     context = rootContext;
+
+    if (Compile.debug)
+      System.out.println("\n**\ncompilation start\n**");
   }
 
   public X86_64 getResult() {
@@ -80,8 +83,6 @@ class MyTVisitor implements TVisitor {
 
     // Generate code for each function
     for (TDef d : f.l) {
-      if (Compile.debug)
-        System.out.println("Compiling " + d.f.name);
       if (!d.f.name.equals("len") 
         && !d.f.name.equals("range") 
         && !d.f.name.equals("list") 
@@ -100,8 +101,10 @@ class MyTVisitor implements TVisitor {
 
   public void visit(TDef d) {
     // Allocate space for local variables
-    if (Compile.debug)
+    if (Compile.debug){
+      System.out.println("Compiling " + d.f.name);
       System.out.println("Allocating space for local variables");
+    }
 
     if (d.f.name.equals("main")){
       context = rootContext;

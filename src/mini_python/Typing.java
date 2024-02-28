@@ -28,6 +28,8 @@ class MyVisitor implements Visitor {
   TDef def;
   TFile file;
 
+  boolean isList;
+
   MyVisitor() {
     super();
     this.currentFunction = mainFunction;
@@ -35,7 +37,7 @@ class MyVisitor implements Visitor {
     // ****** Add basic functions to the function environment
 
     if (Typing.debug) {
-      System.out.println("Typing");
+      System.out.println("\n**\ntyping start\n**");
     }
     // len(list)
     LinkedList<Variable> l = new LinkedList<Variable>();
@@ -51,6 +53,8 @@ class MyVisitor implements Visitor {
     l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("n"));
     mainFunction.functions.add(new Function("range", l, mainFunction));
+
+    this.isList = false;
   }
 
   public TFile visit(File f) {
@@ -65,9 +69,15 @@ class MyVisitor implements Visitor {
   }
 
   public TDef visit(Def d) {
-    // Check for unique function name
+    if (Typing.debug)
+      System.out.println("checking definition of function \"" + d.f.id + "\" at " + d.f.loc );
+
+      // Check for unique function name
     if(currentFunction.functions.contains(d.f.id)) {
       Typing.error(d.f.loc, "duplicate function " + d.f.id);
+    }
+    if(d.f.id.equals("len") || d.f.id.equals("range") || d.f.id.equals("list")) {
+      Typing.error(d.f.loc, "function " + d.f.id + " is a preimplanted function");
     }
 
     // Create a new function environment
@@ -79,13 +89,20 @@ class MyVisitor implements Visitor {
       if(tmp.contains(i.id)) {
         Typing.error(i.loc, "duplicate parameter " + i.id);
       }
+      tmp.add(i.id);
       Variable v = Variable.mkVariable(i.id);
       currentFunction.variables.add(v);
       currentFunction.params.add(v);
     }
 
+    if (Typing.debug)
+      System.out.println("parameters :" + tmp.toString());
+
     // Check the body
     d.s.accept(this);
+
+    if (Typing.debug)
+      System.out.println("function \"" + d.f.id + "\" implementation is well typed");
 
     // Build the output
     TDef def = new TDef(currentFunction, stmt);
@@ -167,10 +184,22 @@ class MyVisitor implements Visitor {
     }
 
     // Check the number of arguments
-    if(e.l.size() != f.params.size()) {
+    if(e.l.size() != fun.params.size()) {
       Typing.error(e.f.loc, "wrong number of arguments for function " + e.f.id);
     }
-      
+
+    // Check list(range()) usage rules
+    if (e.f.id.equals("range") && !this.isList){
+      Typing.error(e.f.loc, "range used without list");
+    } else if (e.f.id.equals("list")){
+      this.isList = true;
+      if (!(e.l.getLast() instanceof Ecall) || !((Ecall)e.l.getLast()).f.id.equals("range")) {
+        Typing.error(e.f.loc, "list used without range");
+      }
+    } else {
+      this.isList = false;
+    }
+
     // Evaluate the arguments
     LinkedList<TExpr> l = new LinkedList<TExpr>();
     for (Expr e1 : e.l) {
@@ -240,13 +269,11 @@ class MyVisitor implements Visitor {
   public void visit(Sfor s) {
     s.e.accept(this);
     TExpr e = expr;
+    Variable v = currentFunction.getFromKey(s.x.id);
     s.s.accept(this);
     /* create a new variable for the for loop scope if the identifier is not already defined
      * in the current scope else use the existing one 
      */
-    Variable v = currentFunction.containsIdent(s.x.id)?
-      currentFunction.getFromKey(s.x.id) :
-      Variable.mkVariable(s.x.id);
     stmt = new TSfor(v, e, stmt);
   }
 
