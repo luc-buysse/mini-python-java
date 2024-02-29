@@ -2,43 +2,6 @@ package mini_python;
 
 import java.util.*;
 
-class Context {
-  public String functionName;
-  public HashMap<Integer, String> var_map = new HashMap<Integer,String>();
-  public Context parent;
-  public String[] work_register;
-  private int work_register_index;
-  private int max_used_register;
-
-  Context(String functionName, Context parent) {
-    this.functionName = functionName;
-    this.parent = parent;
-    this.work_register_index = 0;
-    this.max_used_register = -1;
-  }
-
-  public int geWorkRegister() {
-    if (work_register_index < work_register.length) {
-      if (work_register_index > max_used_register) {
-        max_used_register = work_register_index;
-      }
-      work_register_index = work_register_index + 1;
-      return work_register_index - 1;
-    } else {
-      return -1;
-    }
-  }
-
-  public void freeWorkRegister() {
-    if (work_register_index > 0) {
-      work_register_index = work_register_index - 1;
-    }
-    else {
-      throw new Error("No register to free");
-    }
-  }
-}
-
 
 class Compile {
 
@@ -56,14 +19,12 @@ class Compile {
 
 class MyTVisitor implements TVisitor {
   private X86_64 result;
-  private Context rootContext;
-  private Context context;
+  final String[] registers = new String[]{"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9", "%rax", "%rbx", "%r10", "%r11", "%r12", "r13", "r14", "r15"};
+  Function currentFunction;
 
   public MyTVisitor() {
     super();
     result = new X86_64();
-    rootContext = new Context("main", null);
-    context = rootContext;
 
     if (Compile.debug)
       System.out.println("\n**\ncompilation start\n**");
@@ -77,7 +38,9 @@ class MyTVisitor implements TVisitor {
     // Generate code for the main body
     for (TDef d : f.l) {
       if (d.f.name.equals("main")) {
+        currentFunction = d.f;
         visit(d);
+        break;
       }
     }
 
@@ -100,81 +63,67 @@ class MyTVisitor implements TVisitor {
   }
 
   public void visit(TDef d) {
-    // Allocate space for local variables
     if (Compile.debug){
       System.out.println("Compiling " + d.f.name);
-      System.out.println("Allocating space for local variables");
     }
 
-    if (d.f.name.equals("main")){
-      context = rootContext;
-    } else {
-      context = new Context(d.f.name, rootContext);
-    }
+    currentFunction = d.f;
 
-    // Sort the variables by use
-    Iterator<Variable> keyIterator = d.f.sortedIterator();
-
-    // %rax is the return value
-    String[] registers = new String[]{"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9","%rbx", "%r10", "%r11", "%r12", "r13", "r14", "r15"};
-
-    // caller saved registers
-    int used_registers = 0;
-    LinkedList<Integer> reg_to_use = new LinkedList<Integer>(); // 
-    while (keyIterator.hasNext() && used_registers < 13) {
-      Variable key = keyIterator.next();
-      if (d.f.params.contains(key) 
-        && d.f.params.indexOf(key) != used_registers) 
-        {// avoid swapping the registers uselessly
-        context.var_map.put(key.uid, registers[d.f.params.indexOf(key)]);
-        reg_to_use.add(used_registers);
-      // } else if (GLOBAL TODO) {
-
-      // } else {
-        context.var_map.put(key.uid, registers[used_registers]);
-      }
-      used_registers = used_registers + 1;
-    }
-
-    // stack
-    int stack_offset = 1;
-    while (keyIterator.hasNext()) {
-      Variable key = keyIterator.next();
-      if (d.f.params.contains(key) && d.f.params.indexOf(key) >= 6){
-        context.var_map.put(key.uid, "-" + (d.f.params.indexOf(key) - 6 + 2)); // 6 is the number of register used for the arguments and 2 is the offset for the return address and the saved base pointer
-      } else {
-        context.var_map.put(key.uid, stack_offset + "");
-        stack_offset = stack_offset + 1;
-      }
-    }
-
-    context.work_register = new String[registers.length - used_registers];
-    for (int i = 0; i < context.work_register.length; i++) {
-      context.work_register[i] = registers[used_registers + i];
-    }
-
-    if (Compile.debug)
-      System.out.println("Allocation: " + context.var_map);
-
-    // Generate code
-    result.label(d.f.name);
+    // Initialize stack frame
+    result.label(d.f.name +"_"+ d.f.uid);
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
-    // Save the calle saved registers
-    for (int i = (6 <= d.f.params.size())? 6 : d.f.params.size(); i < used_registers; i++) {
-      result.pushq(registers[i]);
+    // compteur de variables locales
+    int cpt = 1;
+
+    // args
+    int i = 0;
+    for (Variable v : d.f.params) {
+      if (i < 6) {
+        v.str = -cpt*8+"(%rbp)";
+        cpt++;
+        d.f.memory.put(registers[i], v);
+        d.f.reg_age.put(registers[i], 0);
+      } else {
+        v.str = (i-6+2)*8+"(%rbp)"; // 6 pour les 6 premiers args, 2 pour les 2 rbp et rip dans la stack
+      }
+      i++;
     }
 
-    // handle initialisation of the memories (args and globals)
-    // TODO
+    if (Compile.debug) {
+      System.out.println("cpt apres assigment des params : " + cpt);
+    }
+
+    // allocate space for local variables
+    for (Variable v : d.f.variables) {
+      if (!v.str.equals("")) {
+        v.str = -cpt*8+"(%rbp)";
+        cpt++;
+      }
+    }
+
+    if (Compile.debug) {
+      System.out.println("cpt apres assigment des variables locales : " + cpt);
+    }
+
+    // space for the calle saved registers
+    int n = 1/* %rax */ + ((d.f.params.size()>6)?6:d.f.params.size())/* args reg */;
+    for (int j = n; j < this.registers.length; j++) {
+      Variable v = Variable.mkVariable(registers[j]);
+      d.f.variables.add(v);
+      v.str = -cpt*8+"(%rbp)";
+      d.f.memory.put(registers[j], v);
+      cpt++;
+    }
+
+    // update the stack pointer
+    result.subq("$"+cpt*8, "%rsp");
 
     d.body.accept(this);
 
     // restore the calle saved registers
-    for (int i = used_registers - 1; i >= ((6 <= d.f.params.size())? 6 : d.f.params.size()); i--) {
-      result.popq(registers[i]);
-    }
+    this.restoreCalleSavedRegisters(d.f);
 
     // Restore the stack pointer and return*
     result.movq("%rbp", "%rsp");
@@ -222,6 +171,11 @@ class MyTVisitor implements TVisitor {
 
   }
   public void visit(TSreturn s) {
+    s.e.accept(this);
+    
+    // restore the calle saved registers
+    this.restoreCalleSavedRegisters(currentFunction);
+
     // Restore the stack pointer and return*
     result.movq("%rbp", "%rsp");
     result.popq("%rbp");
@@ -246,6 +200,13 @@ class MyTVisitor implements TVisitor {
 
   }
 
+  private void restoreCalleSavedRegisters(Function f) {
+    for (Variable v : f.variables) {
+      if (v.name.charAt(0) == '%') {
+        result.movq(v.str, v.name);
+      }
+    }
+  }
 
   private void implementMalloc() {
     result.label("my_malloc");

@@ -42,17 +42,17 @@ class MyVisitor implements Visitor {
     // len(list)
     LinkedList<Variable> l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("list"));
-    mainFunction.functions.add(new Function("len", l, mainFunction));
+    new Function("len", l, mainFunction);
     
     // list(range)
     l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("range"));
-    mainFunction.functions.add(new Function("list", l, mainFunction));
+    new Function("list", l, mainFunction);
 
     // range(n)
     l = new LinkedList<Variable>();
     l.add(Variable.mkVariable("n"));
-    mainFunction.functions.add(new Function("range", l, mainFunction));
+    new Function("range", l, mainFunction);
 
     this.isList = false;
   }
@@ -60,15 +60,19 @@ class MyVisitor implements Visitor {
   public TFile visit(File f) {
     TFile file = new TFile();
     for(Def d : f.l) {
-      file.l.add(visit(d));
+      visit_def(d);
     }
     f.s.accept(this);
     file.l.add(new TDef(mainFunction, stmt));
 
+    for(Def d : f.l) {
+      file.l.add(visit_body(d));
+    }
+
     return file;
   }
 
-  public TDef visit(Def d) {
+  public void visit_def(Def d) {
     if (Typing.debug)
       System.out.println("checking definition of function \"" + d.f.id + "\" at " + d.f.loc );
 
@@ -98,6 +102,21 @@ class MyVisitor implements Visitor {
     if (Typing.debug)
       System.out.println("parameters :" + tmp.toString());
 
+    // Restore the environment
+    currentFunction = currentFunction.parent;
+  }
+
+  public TDef visit_body(Def d) {
+    if (Typing.debug)
+      System.out.println("checking body of function \"" + d.f.id + "\" at " + d.f.loc );
+
+    // Find the function
+    Function fun = currentFunction;
+    currentFunction = fun.getFunction(d.f.id);
+    if (currentFunction == null) {
+      Typing.error(d.f.loc, "undefined function " + d.f.id);
+    }
+
     // Check the body
     d.s.accept(this);
 
@@ -108,7 +127,7 @@ class MyVisitor implements Visitor {
     TDef def = new TDef(currentFunction, stmt);
 
     // Restore the environment
-    currentFunction = currentFunction.parent;
+    currentFunction = fun;
 
     // return the output
     return def;
@@ -149,20 +168,17 @@ class MyVisitor implements Visitor {
 
   public void visit(Eident e) {
     Function fun = currentFunction;
-    boolean isGlobal = false;
     while (fun != null) {
+      if (Typing.debug)
+        System.out.println("checking if " + e.x.id + " is in " + fun.name + " at " + e.x.loc + "\n" + fun.name + " variables : " + fun.variables.toString() + "\n" + fun.name + " functions : " + fun.functions.toString());
+
       if (fun.containsIdent(e.x.id)) {
         // Increment the number of times the variable is used in env (for optimization purposes)
         Variable v = currentFunction.getFromKey(e.x.id);
         expr = new TEident(v);
-        if(isGlobal) {
-          v.isUsed();
-          v.is_global = true;
-        }
         return;
       }
       fun = fun.parent;
-      isGlobal = true;
     }
 
     Typing.error(e.x.loc, "undefined variable " + e.x.id);
@@ -246,8 +262,10 @@ class MyVisitor implements Visitor {
   public void visit(Sassign s) {
     s.e.accept(this);
     TExpr e = expr;
-    
+
     Variable v = currentFunction.getFromKey(s.x.id);
+    if (Typing.debug)
+      System.out.println("assigning " + s.x.id + " in " + currentFunction.name + " at " + s.x.loc);
 
     stmt = new TSassign(v, e);
   }
