@@ -77,7 +77,7 @@ class MyVisitor implements Visitor {
       System.out.println("checking definition of function \"" + d.f.id + "\" at " + d.f.loc );
 
       // Check for unique function name
-    if(currentFunction.functions.contains(d.f.id)) {
+    if(currentFunction.functions.containsKey(d.f.id)) {
       Typing.error(d.f.loc, "duplicate function " + d.f.id);
     }
     if(d.f.id.equals("len") || d.f.id.equals("range") || d.f.id.equals("list")) {
@@ -95,7 +95,7 @@ class MyVisitor implements Visitor {
       }
       tmp.add(i.id);
       Variable v = Variable.mkVariable(i.id);
-      currentFunction.variables.add(v);
+      currentFunction.variables.put(i.id,v);
       currentFunction.params.add(v);
     }
 
@@ -173,9 +173,7 @@ class MyVisitor implements Visitor {
         System.out.println("checking if " + e.x.id + " is in " + fun.name + " at " + e.x.loc + "\n" + fun.name + " variables : " + fun.variables.toString() + "\n" + fun.name + " functions : " + fun.functions.toString());
 
       if (fun.containsIdent(e.x.id)) {
-        // Increment the number of times the variable is used in env (for optimization purposes)
-        Variable v = currentFunction.getFromKey(e.x.id);
-        expr = new TEident(v);
+        expr = new TEident(fun.getFromKey(e.x.id));
         return;
       }
       fun = fun.parent;

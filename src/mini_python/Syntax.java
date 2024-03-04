@@ -348,12 +348,6 @@ class Variable {
       Variable v = (Variable) o;
       return this.uid == v.uid;
     }
-    if (o instanceof String) {
-      if (Typing.debug)
-        System.out.println("comparing " + this.name + " with " + (String) o);
-      String s = (String) o;
-      return this.name.equals(s);
-    }
     return false;
   }
 
@@ -367,14 +361,16 @@ class Function {
   final int uid; // unique id, for debugging purposes
   // local variables and functions
   final LinkedList<Variable> params; // formal parameters
-  final LinkedList<Variable> variables; // local variables
-  final LinkedList<Function> functions; // local functions
+  final HashMap<String,Variable> variables; // local variables
+  final HashMap<String,Function> functions; // local functions
   final Function parent; // the function that contains this one (mostly "main")
   // local memory management for code generation
-  final HashMap<String, Variable> memory;
-  final HashMap<String, Integer> reg_age;
-  String[] calle_saved;
-
+  final HashMap<String, Variable> memory; // map of the variables in the registers
+  final HashMap<String, Integer> reg_age; // map of the age of the variables in the registers
+  final HashSet<String> used_reg; // set of the registers used in the function
+  int fixe_stack_size; // size of the stack frame to get rid of %rsp
+  int age; // age of the start of the function
+  int tmp; // temporary variable counter for code generation
 
   private static int id = 0;
 
@@ -382,58 +378,51 @@ class Function {
     this.name = name;
     this.uid = id++;
     this.params = new LinkedList<Variable>();
-    this.variables = new LinkedList<Variable>();
-    this.functions = new LinkedList<Function>();
+    this.variables = new HashMap<String,Variable>();
+    this.functions = new HashMap<String,Function>();
     this.parent = parent;
 
     if (parent != null)
-      parent.functions.add(this);
+      parent.functions.put(this.name, this);
 
     this.reg_age = new HashMap<String, Integer>();
     this.memory = new HashMap<String, Variable>();
+    this.used_reg = new HashSet<String>();
   }
 
   Function(String name, LinkedList<Variable> params, Function parent) {
     this.name = name;
     this.uid = id++;
     this.params = params;
-    this.variables = new LinkedList<Variable>();
-    this.functions = new LinkedList<Function>();
+    this.variables = new HashMap<String,Variable>();
+    this.functions = new HashMap<String,Function>();
     this.parent = parent;
 
     if (parent != null)
-      parent.functions.add(this);
+      parent.functions.put(this.name, this);
 
-    reg_age = new HashMap<String, Integer>();
-    memory = new HashMap<String, Variable>();
+    this.reg_age = new HashMap<String, Integer>();
+    this.memory = new HashMap<String, Variable>();
+    this.used_reg = new HashSet<String>();
   }
 
   // for Typing
   public boolean containsIdent(String key) {
-    for (Variable v : this.variables) {
-      if (v.name.equals(key))
-        return true;
-    }
-    return false;
+    return this.variables.containsKey(key); // || this.functions.containsKey(key);
   }
 
   public Function getFunction(String key) {
-    for (Function f : this.functions) {
-      if (f.name.equals(key))
-        return f;
-    }
-    return null;
+    return this.functions.get(key);
   }
 
   public Variable getFromKey(String key) {
     // get a variable from the environment, if it doesn't exist, create it.
     // Used during typing to keep track of the variables used in the fonction body
-    for (Variable v : this.variables) {
-      if (v.name.equals(key))
-        return v;
+    if (this.variables.containsKey(key)) {
+      return this.variables.get(key);
     }
     Variable v = Variable.mkVariable(key);
-    this.variables.add(v);
+    this.variables.put(key,v);
     return v;
   }
 
