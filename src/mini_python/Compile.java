@@ -19,9 +19,12 @@ class Compile {
 
 class MyTVisitor implements TVisitor {
   private X86_64 result;
-  final String[] registers = new String[]{"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9", "%rax", "%rbx", "%r10", "%r11", "%r12", "r13", "r14", "r15"};
-  Function currentFunction;
+  final String[] registers = new String[]{"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9", "%rbx", "%r10", "%r11", "%r12", "r13", "r14", "r15", "%rax"};
   HashMap<String, Integer> globalVar = new HashMap<String, Integer>();
+
+  Function currentFunction;
+  Constant cst;
+  Variable var;
 
   public MyTVisitor() {
     super();
@@ -63,6 +66,11 @@ class MyTVisitor implements TVisitor {
     implementLen();
     implementList();
     implementMalloc();
+
+    // Generate data for const 
+    result.dlabel(".None");
+    result.quad(0);
+    result.quad(0);
   }
 
   public void visit(TDef d) {
@@ -146,19 +154,58 @@ class MyTVisitor implements TVisitor {
   }
 
   public void visit(Cnone c) {
-    // TODO
+    String reg = getReg(var);
+    result.movq(".None", reg);
   }
   public void visit(Cbool c) {
-    // TODO
+    // clean the reg
+    freeReg("%rax");
+    freeReg("%rdi");
+
+    // Set up args
+    result.movq("$16", "%rdi");
+
+    // allocate memory for the boolean
+    result.call("my_malloc");
+
+    // Set up the var as boolean
+    result.movq(1, "(%rax)");
+    result.movq( c.b ? 1:0, "4(%rax)");
+
+    // update memory state
+    currentFunction.memory.put("%rax", var);
+    currentFunction.memory.remove("%rdi");
+    currentFunction.reg_age.put("%rax", currentFunction.age++);
+    currentFunction.reg_age.put("%rdi", -1);
+
   }
   public void visit(Cstring c) {
+    // free needed reg
+    // TODO
+
+    result.movq(c.s.length(), "%rsi");// get the length of the string to construct
+    result.leaq("17(,%rsi,1)", "%rdi");// get the length of the memory to allocate 17 = 2*8 + 1
+
+    result.call("my_malloc");// allocate memory for the list
+
+    result.movq(3, "(%rax)");// store the type of the list
+    result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
+
+    String loopLabel = currentFunction.toString()+currentFunction.tmp++;
+    result.label(loopLabel);
+    result.decq("%rsi");// decrement the length of the list
+    result.movq("%rsi", "16(%rax,%rsi,1)");// store the elements of the list to the allocated memory
+    result.testq("%rsi", "%rsi");
+    result.jge(loopLabel); // Jump to "list_loop" if %rsi is greater than or equal to zero
+
+    // update memory state
     // TODO
   }
   public void visit(Cint c) {
     // TODO
   }
   public void visit(TEcst e)  {
-    // TODO
+    e.c.accept(this);
   }
   public void visit(TEbinop e)  {
     // TODO
@@ -220,7 +267,6 @@ class MyTVisitor implements TVisitor {
     currentFunction.variables.put(v.name, v);
     v.str = -(currentFunction.fixe_stack_size + currentFunction.tmp++)*8+"(%rbp)";
     result.subq("$8", "%rsp");
-    // TODO : allocate memory for the variable ?
 
     if (Compile.debug)
       System.out.println("creating tmp " + v.name + " in " + currentFunction.name);
@@ -317,7 +363,6 @@ class MyTVisitor implements TVisitor {
       if (Compile.debug)
         System.out.println("acces to " + v.name + " with stack access, now buffered in " + oldest);
 
-
       // update the register and memory state
       freeReg(oldest);
       loadVar(v, oldest);
@@ -347,7 +392,7 @@ class MyTVisitor implements TVisitor {
     result.movq("%rsp", "%rbp");
     result.andq("$-16", "%rsp");// 16-byte stack alignment
 
-    // calle save used registers TODO
+    // caller save used registers TODO
     result.call("malloc");
     result.movq("%rbp", "%rsp");
     result.popq("%rbp");
@@ -362,14 +407,16 @@ class MyTVisitor implements TVisitor {
 
     // calle save used registers
     result.pushq("%rsi");
-
-    // Generate code for the body of the function
     result.movq("8(%rdi)", "%rsi");// get the length of the list
-    result.movq("$16", "%rdi");
 
-    result.call("my_malloc");// allocate memory for len of the list
+    // Set up args
+    result.movq(16, "%rdi");
 
-    result.movq("$2", "(%rax)");
+    // allocate memory for len of the list
+    result.call("my_malloc");
+
+    // set up return value
+    result.movq(2, "(%rax)");
     result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
 
     // calle restore used registers
@@ -390,18 +437,23 @@ class MyTVisitor implements TVisitor {
 
     // Generate code for the body of the function
     result.movq("8(%rdi)", "%rsi");// get the length of the list to construct
-    result.leaq("16(%rsi)", "%rdi");// get the length of the memory to allocate
+    result.leaq("16(,%rsi,8)", "%rdi");// get the length of the memory to allocate
 
     result.call("my_malloc");// allocate memory for the list
 
-    result.movq("$4", "(%rax)");// store the type of the list
+    result.movq(4, "(%rax)");// store the type of the list
     result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
+
+    result.testq("%rsi", "%rsi");
+    result.jle("list_skip");// if %rsi <=0, nothing need to be done
 
     result.label("list_loop");
     result.decq("%rsi");// decrement the length of the list
-    result.movq("%rsi", "8(%rax,%rsi,8)");// store the elements of the list to the allocated memory
+    result.movq("%rsi", "16(%rax,%rsi,8)");// store the elements of the list to the allocated memory
     result.testq("%rsi", "%rsi");
-    result.jge("list_loop"); // Jump to "list_loop" if %rsi is greater than or equal to zero
+    result.jg("list_loop"); // Jump to "list_loop" if %rsi is greater than zero
+
+    result.label("list_skip");
 
     // calle restore used registers
     result.popq("%rsi");

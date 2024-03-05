@@ -49,12 +49,14 @@ enum Binop {
 
 abstract class Constant {
   abstract void accept(Visitor v);
+  abstract void accept(TVisitor v);
   static final Cnone None = new Cnone();
 }
 
 class Cnone extends Constant {
   @Override
   void accept(Visitor v) { v.visit(this); }
+  void accept(TVisitor v) { v.visit(this); }
 }
 class Cbool extends Constant {
   final boolean b;
@@ -63,6 +65,7 @@ class Cbool extends Constant {
   }
   @Override
   void accept(Visitor v) { v.visit(this); }
+  void accept(TVisitor v) { v.visit(this); }
 }
 class Cstring extends Constant {
   final String s;
@@ -71,6 +74,7 @@ class Cstring extends Constant {
   }
   @Override
   void accept(Visitor v) { v.visit(this); }
+  void accept(TVisitor v) { v.visit(this); }
 }
 class Cint extends Constant {
   final long i; // Python has arbitrary-precision integers; we simplify here
@@ -79,6 +83,7 @@ class Cint extends Constant {
   }
   @Override
   void accept(Visitor v) { v.visit(this); }
+  void accept(TVisitor v) { v.visit(this); }
 }
 
 /* expressions */
@@ -370,7 +375,7 @@ class Function {
   final HashSet<String> used_reg; // set of the registers used in the function
   int fixe_stack_size; // size of the stack frame to get rid of %rsp
   int age; // age of the start of the function
-  int tmp; // temporary variable counter for code generation
+  int tmp; // temporary variable and label counter for code generation
 
   private static int id = 0;
 
