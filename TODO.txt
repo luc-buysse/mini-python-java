@@ -7,5 +7,9 @@ TODO:
 6. DONE handle global variable memory assignment
 7. DONE handle the calle saving (introduce as variables)
 8. NOT NEEDED free hype allocated memory
-9. implements the compilation of the Statments and Expressions
+9. implements the compilation of the Statments and Expressions check the need to create a return var and check 
 10. finish print in Compile
+11. Error message with cmov to load the right error message
+12. Error message with unrolling the stack
+
+var is the return variable
