@@ -372,7 +372,6 @@ class Function {
   // local memory management for code generation
   final HashMap<String, Variable> memory; // map of the variables in the registers
   final HashMap<String, Integer> reg_age; // map of the age of the variables in the registers
-  final HashSet<String> used_reg; // set of the registers used in the function
   int fixe_stack_size; // size of the stack frame to get rid of %rsp
   int age; // age of the start of the function
   int tmp; // temporary variable and label counter for code generation
@@ -392,7 +391,6 @@ class Function {
 
     this.reg_age = new HashMap<String, Integer>();
     this.memory = new HashMap<String, Variable>();
-    this.used_reg = new HashSet<String>();
   }
 
   Function(String name, LinkedList<Variable> params, Function parent) {
@@ -408,7 +406,6 @@ class Function {
 
     this.reg_age = new HashMap<String, Integer>();
     this.memory = new HashMap<String, Variable>();
-    this.used_reg = new HashSet<String>();
   }
 
   // for Typing

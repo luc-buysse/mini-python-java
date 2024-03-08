@@ -55,7 +55,7 @@ class MyTVisitor implements TVisitor {
       if (!d.f.name.equals("len") 
         && !d.f.name.equals("range") 
         && !d.f.name.equals("list") 
-        && !d.f.name.equals("#my_malloc") // preimplanted functions
+        && !d.f.name.equals(".my_malloc") // preimplanted functions
         && !d.f.name.equals("main")) // main function
         visit(d);
     }
@@ -153,12 +153,18 @@ class MyTVisitor implements TVisitor {
     // restore the calle saved registers
     this.restoreCalleSavedRegisters(d.f);
 
+    // if main, exit
+    if (d.f.name.equals("main")) {
+      result.xorq("%rdx", "%rdx");
+      result.emit("syscall exit");
+      // TODO check how to exit properly
+    }
+
     // Restore the stack pointer and return*
     result.movq("%rbp", "%rsp");
     result.popq("%rbp");
     result.ret();
   }
-
   public void visit(Cnone c) {
     String reg = getRegFor(var);
     result.movq(".None", reg);
@@ -172,7 +178,7 @@ class MyTVisitor implements TVisitor {
     result.movq("$16", "%rdi");
 
     // allocate memory for the boolean
-    result.call("#my_malloc");
+    result.call(".my_malloc");
 
     // Set up the var as boolean
     result.movq(1, "(%rax)");
@@ -193,7 +199,7 @@ class MyTVisitor implements TVisitor {
     result.movq(c.s.length(), "%rsi");// get the length of the string to construct
     result.leaq("17(,%rsi,1)", "%rdi");// get the length of the memory to allocate 17 = 2*8 + 1
 
-    result.call("#my_malloc");// allocate memory for the list
+    result.call(".my_malloc");// allocate memory for the list
 
     result.movq(3, "(%rax)");// store the type of the list
     result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
@@ -206,7 +212,7 @@ class MyTVisitor implements TVisitor {
     result.leaq("16(%rax)","%rdi");
     result.movq(currentFunction.toString()+var.name, "%rsi");
 
-    result.call("#my_strcpy");//copy
+    result.call(".my_strcpy");//copy
 
     // update memory state
     currentFunction.reg_age.put("%rax", currentFunction.age++);
@@ -223,7 +229,7 @@ class MyTVisitor implements TVisitor {
     result.movq("$16", "%rdi");
 
     // allocate memory for the int
-    result.call("#my_malloc");
+    result.call(".my_malloc");
 
     // Set up the var as int
     result.movq(2, "(%rax)");
@@ -242,37 +248,168 @@ class MyTVisitor implements TVisitor {
     e.c.accept(this);
   }
   public void visit(TEbinop e)  {
-    // compile the expressions
-    e.e2.accept(this);
-    Variable v1 = var;
-    var = createTmp();
-    e.e1.accept(this);
-
+    Variable v;
     if (Compile.debug)
-      System.out.println("compiling " + e.op + " of " + var.name + " and " + v1.name);
+      System.out.println("compiling " + e.op + " of " + e.e1.toString() + " and " + e.e2.toString());
 
-    // check the type of the variables aren't None
-    result.cmpq(0, "("+getRegFor(v1)+")");
-    result.je(".Error_gestion");
-    result.cmpq(0, "("+getRegFor(var)+")");
-    result.je(".Error_gestion");
+    switch (e.op) {
+      case Band : case Bor :
+        // compile only var
+        e.e1.accept(this);
+        // no compilation of e2 for now (lazy evaluation)
+        v = var;// useless code but compiler complain if not wroten
+        break;
+      default :
+        // compile the expressions
+        e.e2.accept(this);
+        v = var;
+        var = createTmp();
+        e.e1.accept(this);
+
+        // check the type of the variables aren't None
+        result.cmpq(0, "("+getRegFor(v)+")");
+        result.je(".Error_gestion");
+        result.cmpq(0, "("+getRegFor(var)+")");
+        result.je(".Error_gestion");
+    }
     String tmp, tmp2;
 
     switch (e.op) {
       case Badd :
-      // TODO
+        // labels
+        // type check labels
+        String Badd_int_check = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Badd_string_check = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Badd_list_check = currentFunction.toString() + "_" + currentFunction.tmp++;
+        // operations labels
+        String Badd_int = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Badd_string = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Badd_list = currentFunction.toString() + "_" + currentFunction.tmp++;
+        // exit labels
+        String Badd_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+        // type check
+        result.cmpq(2, "("+getRegFor(v)+")");
+        result.je(Badd_int_check);
+        result.cmpq(3, "("+getRegFor(v)+")");
+        result.je(Badd_string_check);
+        result.cmpq(4, "("+getRegFor(v)+")");
+        result.je(Badd_list_check);
+        result.jmp(".Error_gestion");
+        // int case
+        result.label(Badd_int_check);
+        result.cmpq(2, "("+getRegFor(var)+")");
+        result.je(Badd_int);
+        result.jmp(".Error_gestion");
+        result.label(Badd_int);
+        result.movq("8("+getRegFor(v)+")", getRegFor(v));
+        result.addq(getRegFor(v), "8("+getRegFor(var)+")");
+        result.jmp(Badd_end);
+        // string case
+        result.label(Badd_string_check);
+        result.cmpq(3, "("+getRegFor(var)+")");
+        result.je(Badd_string);
+        result.jmp(".Error_gestion");
+        result.label(Badd_string);
+        // free needed reg
+        freeReg("%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
+        freeReg("%rsi"); currentFunction.reg_age.put("%rsi", currentFunction.age);
+        freeReg("%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
+        tmp = getRegFor(v);// arg 1
+        tmp2 = getRegFor(var);// arg 2
+        // get the length of the new string to %rsi
+        result.movq("8("+ tmp +")", "%rsi");
+        result.addq("8("+ tmp2 +")", "%rsi");// get the length of the string to construct
+        result.leaq("17(,%rsi,1)", "%rdi");// get the length of the memory to allocate 17 = 2*8 + 1
+        result.call(".my_malloc");// allocate memory for the list
+        result.movq(3, "(%rax)");// store the type of the list
+        result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
+        // fill the allocated memory
+        result.leaq("16("+tmp+")", "%rsi");
+        result.addq("16(%rax)", "%rdi");
+        result.movq("%rax", tmp);// save the address of the new var
+        result.call(".my_strcpy");//copy the first string
+        result.leaq("16("+tmp2+")", "%rsi");
+        result.addq("16("+tmp+")", "%rdi");
+        result.call(".my_strcat");//copy the second string
+        result.subq("$16", tmp);// make th epointer point to the var
+        // update memory state
+        killTmp(var);
+        killTmp(v);
+        currentFunction.memory.put(tmp, var);
+        currentFunction.reg_age.put(tmp, currentFunction.age++);
+        currentFunction.reg_age.put("%rdi", -1);
+        currentFunction.reg_age.put("%rsi", -1);
+        currentFunction.reg_age.put("%rax", -1);
+        result.jmp(Badd_end);
+        // list case
+        result.label(Badd_list_check);
+        result.cmpq(4, "("+getRegFor(var)+")");
+        result.je(Badd_list);
+        result.jmp(".Error_gestion");
+        result.label(Badd_list);
+        // save used registers
+        freeReg("%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
+        freeReg("%rsi"); currentFunction.reg_age.put("%rsi", currentFunction.age);
+        freeReg("%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
+        String Badd_list_loop_1 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Badd_list_loop_2 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Badd_list_skip_1 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Badd_list_skip_2 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        // get the length of the new list to %rsi
+        tmp = getRegFor(v);
+        tmp2 = getRegFor(var);
+        result.movq("8("+ tmp +")", "%rsi");
+        result.addq("8("+ tmp2 +")", "%rsi");// get the length of the list to construct
+        result.leaq("16(,%rsi,8)", "%rdi");// get the length of the memory to allocate
+        result.call(".my_malloc");// allocate memory for the list
+        result.movq(4, "(%rax)");// store the type of the list
+        result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
+        // first list
+        result.cmpq(0, "8("+ tmp +")");
+        result.je(Badd_list_skip_1);// if len(list_1) <=0, nothing need to be done
+        result.xorq("%rdi", "%rdi");// %rdi = 0
+        result.label(Badd_list_loop_1);
+        result.movq("16("+tmp+",%rdi,8)", "%rsi");// store the elements of the list_1 to the allocated memory
+        result.movq("%rsi", "16(%rax,%rsi,8)");
+        result.incq("%rdi");// increment the counter
+        result.cmpq("%rdi", "%rsi");
+        result.jl(Badd_list_loop_1);
+        result.label(Badd_list_skip_1);
+        // second list
+        result.cmpq(0, "8("+ tmp +")");
+        result.je(Badd_list_skip_2);// if len(list_2) <=0, nothing need to be done
+        result.xorq("%rdi", "%rdi");// %rdi = 0
+        result.label(Badd_list_loop_2);
+        result.movq("16("+tmp2+",%rdi,8)", "%rsi");// store the elements of the list_2 to the allocated memory
+        result.movq("%rsi", "16(%rax,%rsi,8)");
+        result.incq("%rdi");// increment the counter
+        result.cmpq("%rdi", "%rsi");
+        result.jl(Badd_list_loop_2);
+        result.label(Badd_list_skip_2);
+        // update memory state
+        killTmp(var);
+        killTmp(v);
+        currentFunction.memory.put(tmp, var);
+        currentFunction.reg_age.put(tmp, currentFunction.age++);
+        currentFunction.reg_age.put("%rdi", -1);
+        currentFunction.reg_age.put("%rsi", -1);
+        currentFunction.reg_age.put("%rax", -1);
+        result.jmp(Badd_end);
+
+        // exit 
+        result.label(Badd_end);
 
       case Bsub :
-        // check type of v1
-        result.cmpq(2, "("+getRegFor(v1)+")");
+        // check type of v
+        result.cmpq(2, "("+getRegFor(v)+")");
         result.jne(".Error_gestion");
         // check type of var
         result.cmpq(2, "("+getRegFor(var)+")");
         result.jne(".Error_gestion");
-        // load the value of v1
-        tmp = getRegFor(v1);
-        if (killTmp(v1))
-          tmp2 = tmp;// if v1 is a temporary variable, we can use the same register
+        // load the value of v
+        tmp = getRegFor(v);
+        if (killTmp(v))
+          tmp2 = tmp;// if v is a temporary variable, we can use the same register
         else
           tmp2 = getReg();
         result.movq("8("+ tmp +")", tmp2);
@@ -283,16 +420,16 @@ class MyTVisitor implements TVisitor {
         return;
 
       case Bmul :
-        // check type of v1
-        result.cmpq(2,  "("+getRegFor(v1)+")");
+        // check type of v
+        result.cmpq(2, "("+getRegFor(v)+")");
         result.jne(".Error_gestion");
         // check type of var
         result.cmpq(2, "("+getRegFor(var)+")");
         result.jne(".Error_gestion");
-        // load the value of v1
-        tmp = getRegFor(v1);
-        if (killTmp(v1))
-          tmp2 = tmp;// if v1 is a temporary variable, we can use the same register
+        // load the value of v
+        tmp = getRegFor(v);
+        if (killTmp(v))
+          tmp2 = tmp;// if v is a temporary variable, we can use the same register
         else
           tmp2 = getReg();
         result.movq("8("+ tmp +")", tmp2);
@@ -302,36 +439,36 @@ class MyTVisitor implements TVisitor {
         return;
 
       case Bdiv :
-        // check type of v1
-        result.cmpq(2,  "("+getRegFor(v1)+")");
+        // check type of v
+        result.cmpq(2, "("+getRegFor(v)+")");
         result.jne(".Error_gestion");
         // check type of var
         result.cmpq(2, "("+getRegFor(var)+")");
         result.jne(".Error_gestion");
-        // load the value of v1 in %rax
-        if (v1 == currentFunction.memory.get("%rax")){
-          result.movq("8("+ getRegFor(v1) +")", "%rax");
+        // load the value of var in %rax
+        if (var == currentFunction.memory.get("%rax")){
+          result.movq("8("+ getRegFor(var) +")", "%rax");
           freeReg("%rdx");
         }
-        else if (v1 == currentFunction.memory.get("%rdx")){
+        else if (var == currentFunction.memory.get("%rdx")){
           freeReg("%rax");
-          result.movq("8("+ getRegFor(v1) +")", "%rax");
+          result.movq("8("+ getRegFor(var) +")", "%rax");
         }
         else {
           freeReg("%rax");
-          result.movq("8("+ getRegFor(v1) +")", "%rax");
+          result.movq("8("+ getRegFor(var) +")", "%rax");
           freeReg("%rdx");
         }
         // update memory state
-        currentFunction.memory.put("%rax", v1);
+        currentFunction.memory.put("%rax", var);
         currentFunction.reg_age.put("%rax", currentFunction.age++);
         currentFunction.reg_age.put("%rdx", currentFunction.age);
-        // load the value of var in tmp2
-        tmp2 = getRegFor(var);
+        // load the value of v in tmp2
+        tmp2 = getRegFor(v);
         // do the div and put result in var
         result.cqto();
         result.idivq(tmp2);
-        killTmp(v1);
+        killTmp(v);
         // update memory state so that the result is in var
         currentFunction.memory.put("%rax", var);
         currentFunction.reg_age.put("%rax", currentFunction.age++);
@@ -342,37 +479,37 @@ class MyTVisitor implements TVisitor {
         return;
 
       case Bmod :
-        // check type of v1
-        result.cmpq(2,  "("+getRegFor(v1)+")");
+        // check type of v
+        result.cmpq(2, "("+getRegFor(v)+")");
         result.jne(".Error_gestion");
         // check type of var
         result.cmpq(2, "("+getRegFor(var)+")");
         result.jne(".Error_gestion");
-        // load the value of v1 in %rax
-        if (v1 == currentFunction.memory.get("%rax")){
-          result.movq("8("+ getRegFor(v1) +")", "%rax");
+        // load the value of var in %rax
+        if (var == currentFunction.memory.get("%rax")){
+          result.movq("8("+ getRegFor(var) +")", "%rax");
           freeReg("%rdx");
         }
-        else if (v1 == currentFunction.memory.get("%rdx")){
+        else if (var == currentFunction.memory.get("%rdx")){
           freeReg("%rax");
-          result.movq("8("+ getRegFor(v1) +")", "%rax");
+          result.movq("8("+ getRegFor(var) +")", "%rax");
         }
         else {
           freeReg("%rax");
-          result.movq("8("+ getRegFor(v1) +")", "%rax");
+          result.movq("8("+ getRegFor(var) +")", "%rax");
           freeReg("%rdx");
         }
         // update memory state
-        currentFunction.memory.put("%rax", v1);
+        currentFunction.memory.put("%rax", var);
         currentFunction.reg_age.put("%rax", currentFunction.age++);
         currentFunction.reg_age.put("%rdx", currentFunction.age);
-        // load the value of var in tmp2
-        tmp2 = getRegFor(var);
+        // load the value of v in tmp2
+        tmp2 = getRegFor(v);
         // do the div and put result in var
         result.cqto();
         result.idivq(tmp2);
         // update memory state so that the result is in var
-        killTmp(v1);
+        killTmp(v);
         currentFunction.memory.put("%rdx", var);
         currentFunction.reg_age.put("%rdx", currentFunction.age++);
         if (tmp2 != "%rdx") {
@@ -390,10 +527,10 @@ class MyTVisitor implements TVisitor {
         currentFunction.reg_age.put("%rdi", currentFunction.age);
         currentFunction.reg_age.put("%rsi", currentFunction.age);
         currentFunction.reg_age.put("%rax", currentFunction.age++);
-        // move the v1 in %rdi
-        result.movq(getRegFor(v1), "%rdi");
-        // move the var in %rsi
-        result.movq(getRegFor(var), "%rsi");
+        // move var in %rdi
+        result.movq(getRegFor(var), "%rdi");
+        // move v in %rsi
+        result.movq(getRegFor(v), "%rsi");
         switch (e.op) {// set up the type check
           case Beq : case Bneq :
             result.movq(0,"%rax");
@@ -406,12 +543,12 @@ class MyTVisitor implements TVisitor {
             return;
         }
         // do the comparison
-        result.call("#my_compare");
+        result.call(".my_compare");
         // put the result in var
         currentFunction.reg_age.put("%rax", currentFunction.age++);
         currentFunction.reg_age.put("%rdi", -1);
         currentFunction.reg_age.put("%rsi", -1);
-        killTmp(v1);
+        killTmp(v);
         result.movq(1, "("+getRegFor(var)+")");
         result.cmpq(0, "%rax");
         String False_label = currentFunction.toString() + "_" + currentFunction.tmp++;
@@ -469,18 +606,60 @@ class MyTVisitor implements TVisitor {
         return;
 
       case Band :
+        // do the lazy evaluation
+        String Band_false = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Band_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+        // test v
+        result.cmpq(0, "8("+getRegFor(var)+")");
+        result.je(Band_false);
+        // test var
+        e.e2.accept(this);
+        result.cmpq(0, "8("+getRegFor(var)+")");
+        result.je(Band_false);
+        // both are true
+        result.movq(1, "8("+getRegFor(var)+")");
+        result.movq(1, "("+getRegFor(var)+")");
+        result.jmp(Band_end);
+        // at least one is false
+        result.label(Band_false);
+        result.movq(0, "8("+getRegFor(var)+")");
+        result.movq(1, "("+getRegFor(var)+")");
+        // exit
+        result.label(Band_end);
+        return;
       case Bor :
+        // do the lazy evaluation
+        String Bor_true = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Bor_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+        // test v
+        result.cmpq(0, "8("+getRegFor(var)+")");
+        result.jne(Bor_true);
+        // test var
+        e.e2.accept(this);
+        result.cmpq(0, "8("+getRegFor(var)+")");
+        result.jne(Bor_true);
+        // both are false
+        result.movq(0, "8("+getRegFor(var)+")");
+        result.movq(1, "("+getRegFor(var)+")");
+        result.jmp(Bor_end);
+        // at least one is true
+        result.label(Bor_true);
+        result.movq(1, "8("+getRegFor(var)+")");
+        result.movq(1, "("+getRegFor(var)+")");
+        // exit
+        result.label(Bor_end);
+        return;
     }
   }
 
   private void implementCompare() {
     // compare %rdi and %rsi and put the result in %rax ( 0 if equal, -1 if %rdi < %rsi, 1 if %rdi > %rsi )
-    result.label("#my_compare");
+    result.label(".my_compare");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
     if (Compile.debug)
-      System.out.println("compiling #my_compare in " + currentFunction.name);
+      System.out.println("compiling .my_compare in " + currentFunction.name);
 
     // check the type of the variables aren't None
     result.cmpq(0, "(%rdi)");
@@ -509,21 +688,21 @@ class MyTVisitor implements TVisitor {
     String Comp_bool_int_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Comp_list_check = currentFunction.toString() + "_" + currentFunction.tmp++;
 
-    // check type of v1
+    // check type of v
     result.cmpq(3, "(%rdi)");
     result.jl(Comp_bool_int_check);
     result.jg(Comp_list_check);
-    // check type of v2
-    // if v1 is a string
+    // check type of v
+    // if v is a string
     result.cmpq(3, "(%rsi)");
     result.jne(".Error_gestion");
     result.jmp(string_operation);
-    // if v1 is a boolean or an int
+    // if v is a boolean or an int
     result.label(Comp_bool_int_check);
     result.cmpq(2, "(%rsi)");
     result.jg(".Error_gestion");
     result.jmp(bool_int_operation);
-    // if v1 is a list
+    // if v is a list
     result.label(Comp_list_check);
     result.cmpq(4, "(%rsi)");
     result.jne(".Error_gestion");
@@ -547,7 +726,7 @@ class MyTVisitor implements TVisitor {
     // compare the elements
     result.pushq("%rax");
     result.movq(1, "%rax");
-    result.call("#my_compare");
+    result.call(".my_compare");
     // exit loop if the elements are different
     result.cmpq(1, "%rax");
     result.je(inf_t);
@@ -570,21 +749,21 @@ class MyTVisitor implements TVisitor {
     String Beq_Neq_bool_int_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Beq_Neq_list_check = currentFunction.toString() + "_" + currentFunction.tmp++;
 
-    // check type of v1
+    // check type of v
     result.cmpq(3, "(%rdi)");
     result.jl(Beq_Neq_bool_int_check);
     result.jg(Beq_Neq_list_check);
-    // check type of v2
-    // if v1 is a string
+    // check type of v
+    // if v is a string
     result.cmpq(3, "(%rsi)");
     result.jne(inf_t);
     result.jmp(string_operation);
-    // if v1 is a boolean or an int
+    // if v is a boolean or an int
     result.label(Beq_Neq_bool_int_check);
     result.cmpq(2, "(%rsi)");
     result.jg(inf_t);
     result.jmp(bool_int_operation);
-    // if v1 is a list
+    // if v is a list
     result.label(Beq_Neq_list_check);
     result.cmpq(4, "(%rsi)");
     result.jne(inf_t);
@@ -608,7 +787,7 @@ class MyTVisitor implements TVisitor {
     // compare the elements
     result.pushq("%rax");
     result.movq(0, "%rax");
-    result.call("#my_compare");
+    result.call(".my_compare");
     // exit loop if the elements are different
     result.cmpq(1, "%rax");
     result.je(inf_t);
@@ -640,7 +819,7 @@ class MyTVisitor implements TVisitor {
     result.leaq("16(%rdi)", "%rdi");
     result.leaq("16(%rsi)", "%rsi");
     // call strcmp
-    result.call("#my_strcmp");
+    result.call(".my_strcmp");
     // exit
     result.movq("%rbp", "%rsp");
     result.popq("%rbp");
@@ -670,6 +849,7 @@ class MyTVisitor implements TVisitor {
     // Restore the stack pointer and return
     return;
   }
+
   public void visit(TErange e) {
     // TODO
   }
@@ -811,7 +991,6 @@ class MyTVisitor implements TVisitor {
   private String getReg() {
     // free the oldest used reg
     String oldest = currentFunction.reg_age.entrySet().stream().min(Comparator.comparingInt(Map.Entry::getValue)).get().getKey();
-    currentFunction.used_reg.add(oldest);
 
     if (Compile.debug)
       System.out.println("evicting " + oldest + " for temporary use");
@@ -839,7 +1018,6 @@ class MyTVisitor implements TVisitor {
     } else {//eviction
       // get the oldest register
       String oldest = currentFunction.reg_age.entrySet().stream().min(Comparator.comparingInt(Map.Entry::getValue)).get().getKey();
-      currentFunction.used_reg.add(oldest);
 
       if (Compile.debug)
         System.out.println("acces to " + v.name + " with stack access, now buffered in " + oldest);
@@ -854,7 +1032,7 @@ class MyTVisitor implements TVisitor {
 
   private void restoreCalleSavedRegisters(Function f) {
     for (Variable v : f.variables.values()) {
-      if (v.name.charAt(0) == '%' && f.used_reg.contains(v.name)){
+      if (v.name.charAt(0) == '%' && f.reg_age.get(v.name) != 0){
         if (Compile.debug) {
           System.out.println("restoring " + v.name);
         }
@@ -865,7 +1043,7 @@ class MyTVisitor implements TVisitor {
   }
 
   private void implementMalloc() {
-    result.label("#my_malloc");
+    result.label(".my_malloc");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
     result.andq("$-16", "%rsp");// 16-byte stack alignment
@@ -891,7 +1069,7 @@ class MyTVisitor implements TVisitor {
     result.movq(16, "%rdi");
 
     // allocate memory for len of the list
-    result.call("#my_malloc");
+    result.call(".my_malloc");
 
     // set up return value
     result.movq(2, "(%rax)");
@@ -917,7 +1095,7 @@ class MyTVisitor implements TVisitor {
     result.movq("8(%rdi)", "%rsi");// get the length of the list to construct
     result.leaq("16(,%rsi,8)", "%rdi");// get the length of the memory to allocate
 
-    result.call("#my_malloc");// allocate memory for the list
+    result.call(".my_malloc");// allocate memory for the list
 
     result.movq(4, "(%rax)");// store the type of the list
     result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
@@ -947,7 +1125,7 @@ class MyTVisitor implements TVisitor {
   }
 
   private void implementPrint() {
-    result.label("print");
+    result.label(".my_print");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
