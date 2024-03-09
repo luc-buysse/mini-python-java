@@ -67,7 +67,7 @@ class MyTVisitor implements TVisitor {
     implementList();
     implementMalloc();
     implementStrcpy();
-    implementstrcmp();
+    implementStrcmp();
     implementCompare();
 
     // error gestion code
@@ -990,7 +990,49 @@ class MyTVisitor implements TVisitor {
     currentFunction.reg_age.put("%rax", -1);
   }
   public void visit(TEcall e) {
-    // TODO
+    if (Compile.debug)
+      System.out.println("compiling call to " + e.f.name + " in " + var.name);
+    
+    int nb_args = e.f.params.size();
+    Variable[] args = new Variable[nb_args];
+    // visite the args expressions
+    int i = 0;
+    for (TExpr arg : e.l) {
+      arg.accept(this);
+      args[i++] = var;
+      var = createTmp();
+    }
+    // put the args in the right registers
+    for (int cpt = 0; cpt < ((nb_args<6)?nb_args:6); cpt++) {
+      if (getRegFor(args[cpt]) != registers[cpt])
+        freeReg(registers[cpt]);
+      result.movq(getRegFor(args[cpt]), registers[cpt]);
+    }
+    // rest in the stack
+    if (nb_args > 6) {
+      for (int cpt = nb_args-1; cpt >= 6; cpt--) {
+        result.pushq(getRegFor(args[cpt]));
+      }
+    }
+    // call the function
+    result.pushq("-8(%rbp)");
+    result.call(e.f.name +"_"+ e.f.uid);
+    //reset the stack
+    if (nb_args > 6) {
+      result.addq("$"+(nb_args-6+1)*8, "%rsp");
+    } else {
+      result.addq("$8", "%rsp");
+    }
+    // update memory state
+    for (i = 0; i < nb_args; i++) {
+      killTmp(args[i]);
+    }
+    for (int cpt = 0; cpt < ((nb_args<6)?nb_args:6); cpt++) {
+      currentFunction.reg_age.put(registers[cpt], -1);
+    }
+    var = createTmp();
+    currentFunction.memory.put("%rax", var);
+    currentFunction.reg_age.put("%rax", currentFunction.age++);
   }
   public void visit(TEget e) {
     // TODO
@@ -1313,7 +1355,7 @@ class MyTVisitor implements TVisitor {
     // TODO
   }
 
-  private void implementstrcmp() {
+  private void implementStrcmp() {
     // TODO
   }
 
