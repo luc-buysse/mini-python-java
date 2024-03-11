@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class StackManagement {
   private final X86_64 result;
+  private final static boolean debug = Compile.debug;
 
   public StackManagement(X86_64 result) {
     this.result = result;
@@ -16,14 +17,14 @@ public class StackManagement {
     v.str = -(currentFunction.fixe_stack_size++)*8+"(%rbp)";
     result.subq("$8", "%rsp");
 
-    if (Compile.debug)
+    if (debug)
       System.out.println("creating tmp " + v.name + " in " + currentFunction.name);
 
     return v;
   }
 
   public boolean killTmp(Function currentFunction, Variable v) {
-    if (Compile.debug)
+    if (debug)
       System.out.println("killing var " + v.name + " in " + currentFunction.name);
 
     if (v.name.charAt(0) == '#' && currentFunction.memory.containsValue(v))
@@ -31,16 +32,30 @@ public class StackManagement {
       String reg = currentFunction.memory.entrySet().stream().filter(entry -> entry.getValue().equals(v)).findFirst().get().getKey();
       currentFunction.memory.remove(reg);
       currentFunction.reg_age.put(reg, -1);
-      // TODO : free the allocated memory for the variable ?
+      if (Compile.debug){
+        System.out.println("memory state : "+currentFunction.memory.toString());
+        System.out.println("registers age : "+currentFunction.reg_age.toString());
+      }
       return true;
     }
     else
     {
-      if (Compile.debug)
+      if (v.name.charAt(0) != '#' &&debug)
         System.out.println("Warning: trying to kill a non temporary variable : " + v.name);
 
       return false;
     }
+  }
+
+  public void assign(Function currentFunction, Variable v, String reg) {
+    // assign the variable to the register
+    if (debug)
+      System.out.println("assigning " + v.name + " to " + reg);
+    if (currentFunction.memory.containsValue(v)){
+      freeReg(currentFunction, currentFunction.memory.entrySet().stream().filter(entry -> entry.getValue().equals(v)).findFirst().get().getKey());
+    }
+    currentFunction.memory.put(reg,v);
+    currentFunction.reg_age.put(reg,currentFunction.age++);
   }
 
   public void loadVar(Function currentFunction, Variable v, String reg) {
@@ -48,12 +63,12 @@ public class StackManagement {
     if (currentFunction.variables.containsValue(v)) 
     {// local variable
       result.movq(v.str, reg);
-      if (Compile.debug)
+      if (debug)
         System.out.println("loading local " + v.name + " in " + reg);
     }
     else
     {// global variable
-      if (Compile.debug)
+      if (debug)
         System.out.println("loading global " + v.name + " in " + reg);
       result.pushq("%rbp");
       result.movq("-8(%rbp)", "%rbp");
@@ -67,16 +82,24 @@ public class StackManagement {
 
   public void freeReg(Function currentFunction, String reg) {
     // free the reg by saving the variable in the stack
-    if (Compile.debug)
-      System.out.println("freeing " + reg);
+    if (debug)
+      System.out.println("freeing " + reg + " aged " + currentFunction.reg_age.get(reg) + " in " + currentFunction.name);
 
-    Variable v = currentFunction.memory.get(reg);
     if (currentFunction.reg_age.get(reg) == -1 ){
-      if (Compile.debug)
-        System.out.println("Warning: trying to free an empty register");
-
       return;
     }
+    if (!currentFunction.memory.containsKey(reg))
+    {
+      if (debug){
+        System.out.println("Warning: " + reg + " age is " + currentFunction.reg_age.get(reg) + " but is not in the memory");
+        System.out.println("current memory : " + currentFunction.memory);
+        System.out.println("current age : " + currentFunction.reg_age);
+      }
+      currentFunction.reg_age.put(reg, -1);
+      return;
+    }
+    Variable v = currentFunction.memory.get(reg);
+
     if (currentFunction.variables.containsValue(v))
     {// local variable
       result.movq(reg, v.str);
@@ -92,16 +115,13 @@ public class StackManagement {
     currentFunction.memory.remove(reg);
     currentFunction.reg_age.put(reg, -1);
 
-    if (Compile.debug)
+    if (debug)
       System.out.println(v.name + " evicted from " + reg);
   }
 
   public String getReg(Function currentFunction) {
     // free the oldest used reg
     String oldest = currentFunction.reg_age.entrySet().stream().min(Comparator.comparingInt(Map.Entry::getValue)).get().getKey();
-
-    if (Compile.debug)
-      System.out.println("evicting " + oldest + " for temporary use");
 
     // update the register and memory state
     freeReg(currentFunction, oldest);
@@ -113,7 +133,7 @@ public class StackManagement {
 
   public String getRegFor(Function currentFunction, Variable v) {
     if (currentFunction.memory.containsValue(v)) { // no eviction
-      if (Compile.debug)
+      if (debug)
         System.out.println("acces to " + v.name + " without stack access");
 
       // get the register
@@ -127,7 +147,7 @@ public class StackManagement {
       // get the oldest register
       String oldest = currentFunction.reg_age.entrySet().stream().min(Comparator.comparingInt(Map.Entry::getValue)).get().getKey();
 
-      if (Compile.debug)
+      if (debug)
         System.out.println("acces to " + v.name + " with stack access, now buffered in " + oldest);
 
       // update the register and memory state
@@ -141,7 +161,7 @@ public class StackManagement {
   public void restoreCalleSavedRegisters(Function currentFunction) {
     for (Variable v : currentFunction.variables.values()) {
       if (v.name.charAt(0) == '%' && currentFunction.reg_age.get(v.name) != 0 && !v.name.equals("%rax")){
-        if (Compile.debug) {
+        if (debug) {
           System.out.println("restoring " + v.name);
         }
         result.movq(v.str, v.name);
