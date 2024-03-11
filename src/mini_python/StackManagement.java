@@ -133,11 +133,11 @@ public class StackManagement {
 
   public String getRegFor(Function currentFunction, Variable v) {
     if (currentFunction.memory.containsValue(v)) { // no eviction
-      if (debug)
-        System.out.println("acces to " + v.name + " without stack access");
-
       // get the register
       String reg = currentFunction.memory.entrySet().stream().filter(entry -> entry.getValue().equals(v)).findFirst().get().getKey();
+
+      if (debug)
+        System.out.println("acces to " + v.name + " in "+ reg +" without stack access");
 
       // age the registers
       currentFunction.reg_age.put(reg, currentFunction.age++);

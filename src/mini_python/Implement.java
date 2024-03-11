@@ -3,17 +3,17 @@ package mini_python;
 public class Implement {
   private final X86_64 result;
   private final Function currentFunction;
+  private final static boolean debug = false;
 
   public Implement(X86_64 result, Function mainFu) {
     this.result = result;
-    this.currentFunction = new Function(".implement_context",mainFu);
+    this.currentFunction = new Function("_implement_context",mainFu);
   }
   
   public void malloc() {
-    result.label(".my_malloc");
+    result.label("_my_malloc");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
-    result.andq("$-16", "%rsp");// 16-byte stack alignment
 
     // caller save registers
     result.pushq("%rsi");
@@ -24,7 +24,14 @@ public class Implement {
     result.pushq("%r10");
     result.pushq("%r11");
 
+    result.pushq("%rbx");
+    result.movq("%rsp", "%rbx");
+    result.andq("$-16", "%rsp");
+
     result.call("malloc");
+
+    result.movq("%rbx", "%rsp");
+    result.popq("%rbx");
 
     // caller restore registers
     result.popq("%r11");
@@ -54,7 +61,7 @@ public class Implement {
     result.movq(16, "%rdi");
 
     // allocate memory for len of the list
-    result.call(".my_malloc");
+    result.call("_my_malloc");
 
     // set up return value
     result.movq(2, "(%rax)");
@@ -80,7 +87,7 @@ public class Implement {
     result.movq("8(%rdi)", "%rsi");// get the length of the list to construct
     result.leaq("16(,%rsi,8)", "%rdi");// get the length of the memory to allocate
 
-    result.call(".my_malloc");// allocate memory for the list
+    result.call("_my_malloc");// allocate memory for the list
 
     result.movq(4, "(%rax)");// store the type of the list
     result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
@@ -110,26 +117,168 @@ public class Implement {
   }
 
   public void print() {
-    result.label(".my_print");
+    result.label("print");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
+    // calle save used registers
     result.pushq("%rax");
-    result.xorq("%rax","%rax");
+    result.pushq("%rsi");
+    result.pushq("%rdx");
+    result.pushq("%rcx");
+    result.pushq("%r8");
+    result.pushq("%r9");
+    result.pushq("%r10");
+    result.pushq("%r11");
 
-    // Generate code for the body of the function
-    // TODO
-    // faire différents cas en fonction du type en entrée
+    // aligne the stack for the call of printf
+    result.pushq("%rbx");
+    result.movq("%rsp", "%rbx");
+    result.andq("$-16", "%rsp");
+
+    // put 0 in %rax for futur use of printf
+    result.xorq("%rax", "%rax");
+
+    // label for type check
+    String print_int = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_bool = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_string = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_list = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_none = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+
+    // check type of %rdi
+    result.cmpq(0, "(%rdi)");
+    result.je(print_none);
+    result.cmpq(1, "(%rdi)");
+    result.je(print_bool);
+    result.cmpq(2, "(%rdi)");
+    result.je(print_int);
+    result.cmpq(3, "(%rdi)");
+    result.je(print_string);
+    result.cmpq(4, "(%rdi)");
+    result.je(print_list);
+    result.jmp("_Error_gestion");
+
+    // print bool
+    result.label(print_bool);
+    print_bool();
+    result.jmp(print_end);
+    // print int
+    result.label(print_int);
+    print_int();
+    result.jmp(print_end);
+    // print string
+    result.label(print_string);
+    print_string();
+    result.jmp(print_end);
+    // print list
+    result.label(print_list);
+    print_list();
+    result.jmp(print_end);
+    // print none
+    result.label(print_none);
+    print_none();
+
+    // exit
+    result.label(print_end);
+
+    //flush the buffer
+    result.xorq("%rax", "%rax");
+    result.movq("$_flush", "%rdi");
+    result.dlabel("_flush");
+    result.data(".string \"\n\"");
+
+    result.call("printf");
+
+    // realign the stack and return
+    result.movq("%rbx", "%rsp");
+    result.popq("%rbx");
+
+    // restore used registers
+    result.popq("%r11");
+    result.popq("%r10");
+    result.popq("%r9");
+    result.popq("%r8");
+    result.popq("%rcx");
+    result.popq("%rdx");
+    result.popq("%rsi");
+    result.popq("%rax");
 
     // Restore the stack pointer and return
-    result.popq("%rax");
-    result.addq("$8", "%rsp");
     result.popq("%rbp");
     result.ret();
   }
 
+  private void print_bool() {
+    String print_false = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+    // print the boolean
+    result.cmpq(0, "8(%rdi)");
+    result.je(print_false);
+    // print true
+    result.movq("$_True", "%rdi");
+    result.call("printf");
+    result.jmp(print_end);
+    // print false
+    result.label(print_false);
+    result.movq("$_False", "%rdi");
+    result.call("printf");
+    // exit
+    result.label(print_end);
+
+    // create the string for the booleans
+    result.dlabel("_True");
+    result.string("True");
+    result.dlabel("_False");
+    result.string("False");
+  }
+
+  private void print_int() {
+    // print the integer
+    result.movq("8(%rdi)", "%rsi");
+    result.movq("$_int_format", "%rdi");
+    result.call("printf");
+
+    // create the string for the int format
+    result.dlabel("_int_format");
+    result.string("%d");
+  }
+
+  private void print_string() {
+    // print the string
+    result.leaq("16(%rdi)", "%rdi");
+    result.call("printf");
+  }
+
+  private void print_list() {
+    // print the list
+    result.movq("8(%rdi)", "%rsi");
+    result.movq("$_list_format", "%rdi");
+    result.call("printf");
+    // TODO print the list
+
+    // create the string for the list format
+    result.dlabel("_list_format");
+    result.string("[");
+    result.dlabel("_list_format_end");
+    result.string("]");
+    result.dlabel("_list_format_sep");
+    result.string(",");
+  }
+
+  private void print_none() {
+    // print the none
+    result.movq("$_None_format", "%rdi");
+    result.call("printf");
+
+    // create the string for the none
+    result.dlabel("_None_format");
+    result.string("None");
+  }
+
   public void strcpy() {
-    result.label(".my_strcpy");
+    result.label("_my_strcpy");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
@@ -141,8 +290,15 @@ public class Implement {
     result.pushq("%r9");
     result.pushq("%r10");
     result.pushq("%r11");
+    // aligne the stack and call
+    result.pushq("%rbx");
+    result.movq("%rsp", "%rbx");
+    result.andq("$-16", "%rsp");
 
     result.call("strcpy");
+
+    result.movq("%rbx", "%rsp");
+    result.popq("%rbx");
 
     // calle restore used registers
     result.popq("%r11");
@@ -159,7 +315,7 @@ public class Implement {
   }
 
   public void strcat() {
-    result.label(".my_strcat");
+    result.label("_my_strcat");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
@@ -172,7 +328,15 @@ public class Implement {
     result.pushq("%r10");
     result.pushq("%r11");
 
+    // aligne the stack and call
+    result.pushq("%rbx");
+    result.movq("%rsp", "%rbx");
+    result.andq("$-16", "%rsp");
+
     result.call("strcat");
+
+    result.movq("%rbx", "%rsp");
+    result.popq("%rbx");
 
     // calle restore used registers
     result.popq("%r11");
@@ -189,7 +353,7 @@ public class Implement {
   }
 
   public void strcmp() {
-    result.label(".my_strcmp");
+    result.label("_my_strcmp");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
@@ -200,8 +364,15 @@ public class Implement {
     result.pushq("%r9");
     result.pushq("%r10");
     result.pushq("%r11");
+    // aligne the stack and call
+    result.pushq("%rbx");
+    result.movq("%rsp", "%rbx");
+    result.andq("$-16", "%rsp");
 
     result.call("strcmp");
+
+    result.movq("%rbx", "%rsp");
+    result.popq("%rbx");
 
     // calle restore used registers
     result.popq("%r11");
@@ -218,41 +389,43 @@ public class Implement {
 
   public void errorGestion() {
     // Error message
-    result.dlabel(".Error_message");
+    result.dlabel("_Error_message");
     result.string("error : detected error while excecuting code");
 
     // Reset stack
-    result.label(".ErrorGestion");
+    result.label("_Error_gestion");
     result.movq("-8(%rbp)", "%rbp");
     result.movq("%rbp", "%rsp");
 
     // print error msg
     result.xorq("%rax","%rax");
-    result.movq(".Error_message", "%rdi");
+    result.movq("_Error_message", "%rdi");
+    // align the stack and call
+    result.andq("$-16", "%rsp");
     result.call("printf");
 
     // leave with error code
     result.movq(1,"%rdi");
-    result.emit("syscall exit");
+    result.movq(60,"%rax");
+    result.emit("syscall");
     // TODO verifier si cest la bonne typo
 
   }
 
-
   public void compare() {
     // compare %rdi and %rsi and put the result in %rax ( 0 if equal, -1 if %rdi < %rsi, 1 if %rdi > %rsi )
-    result.label(".my_compare");
+    result.label("_my_compare");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
-    if (Compile.debug)
+    if (debug)
       System.out.println("compiling .my_compare in " + currentFunction.name);
 
     // check the type of the variables aren't None
     result.cmpq(0, "(%rdi)");
-    result.je(".Error_gestion");
+    result.je("_Error_gestion");
     result.cmpq(0, "(%rsi)");
-    result.je(".Error_gestion");
+    result.je("_Error_gestion");
 
     // create operations labels
     // operation labels
@@ -282,17 +455,17 @@ public class Implement {
     // check type of v
     // if v is a string
     result.cmpq(3, "(%rsi)");
-    result.jne(".Error_gestion");
+    result.jne("_Error_gestion");
     result.jmp(string_operation);
     // if v is a boolean or an int
     result.label(Comp_bool_int_check);
     result.cmpq(2, "(%rsi)");
-    result.jg(".Error_gestion");
+    result.jg("_Error_gestion");
     result.jmp(bool_int_operation);
     // if v is a list
     result.label(Comp_list_check);
     result.cmpq(4, "(%rsi)");
-    result.jne(".Error_gestion");
+    result.jne("_Error_gestion");
 
     // do the operation on list
     // internal labels
@@ -313,7 +486,7 @@ public class Implement {
     // compare the elements
     result.pushq("%rax");
     result.movq(1, "%rax");
-    result.call(".my_compare");
+    result.call("_my_compare");
     // exit loop if the elements are different
     result.cmpq(1, "%rax");
     result.je(inf_t);
@@ -374,7 +547,7 @@ public class Implement {
     // compare the elements
     result.pushq("%rax");
     result.movq(0, "%rax");
-    result.call(".my_compare");
+    result.call("_my_compare");
     // exit loop if the elements are different
     result.cmpq(1, "%rax");
     result.je(inf_t);
@@ -406,7 +579,7 @@ public class Implement {
     result.leaq("16(%rdi)", "%rdi");
     result.leaq("16(%rsi)", "%rsi");
     // call strcmp
-    result.call(".my_strcmp");
+    result.call("_my_strcmp");
     // exit
     result.movq("%rbp", "%rsp");
     result.popq("%rbp");
@@ -436,5 +609,4 @@ public class Implement {
     // Restore the stack pointer and return
     return;
   }
-
 }
