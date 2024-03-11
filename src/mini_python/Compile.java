@@ -178,7 +178,7 @@ class MyTVisitor implements TVisitor {
   }
   public void visit(Cnone c) {
     String reg = sM.getRegFor(currentFunction, var);
-    result.movq("_None", reg);
+    result.movq("$_None", reg);
   }
   public void visit(Cbool c) {
     // clean the reg
@@ -193,7 +193,7 @@ class MyTVisitor implements TVisitor {
 
     // Set up the var as boolean
     result.movq(1, "(%rax)");
-    result.movq( c.b ? 1:0, "4(%rax)");
+    result.movq( c.b ? 1:0, "8(%rax)");
 
     // update memory state
     sM.assign(currentFunction, var, "%rax");

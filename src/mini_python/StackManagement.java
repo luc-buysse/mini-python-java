@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class StackManagement {
   private final X86_64 result;
-  private final static boolean debug = Compile.debug;
+  private final static boolean debug = false;
 
   public StackManagement(X86_64 result) {
     this.result = result;

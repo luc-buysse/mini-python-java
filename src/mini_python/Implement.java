@@ -187,7 +187,7 @@ public class Implement {
     result.xorq("%rax", "%rax");
     result.movq("$_flush", "%rdi");
     result.dlabel("_flush");
-    result.data(".string \"\n\"");
+    result.data(".string \"\\n\"");
 
     result.call("printf");
 
@@ -390,7 +390,7 @@ public class Implement {
   public void errorGestion() {
     // Error message
     result.dlabel("_Error_message");
-    result.string("error : detected error while excecuting code");
+    result.string("error : detected error while excecuting code\\n");
 
     // Reset stack
     result.label("_Error_gestion");
@@ -399,7 +399,7 @@ public class Implement {
 
     // print error msg
     result.xorq("%rax","%rax");
-    result.movq("_Error_message", "%rdi");
+    result.movq("$_Error_message", "%rdi");
     // align the stack and call
     result.andq("$-16", "%rsp");
     result.call("printf");
@@ -408,8 +408,6 @@ public class Implement {
     result.movq(1,"%rdi");
     result.movq(60,"%rax");
     result.emit("syscall");
-    // TODO verifier si cest la bonne typo
-
   }
 
   public void compare() {

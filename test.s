@@ -6,20 +6,12 @@ main_0:
 	movq %rsp, %rbp
 	subq $104, %rsp
 	subq $8, %rsp
+	movq -104(%rbp), %rax
+	movq $_None, %rax
 	movq %rdi, -8(%rbp)
-	movq %rsi, -16(%rbp)
-	movq $13, %rsi
-	leaq 17(,%rsi,1), %rdi
-	call _my_malloc
-	movq $3, (%rax)
-	movq %rsi, 8(%rax)
-	leaq 16(%rax), %rdi
-	movq $main_0_1, %rsi
-	call _my_strcpy
 	movq %rax, %rdi
 	call print
 	movq -8(%rbp), %rdi
-	movq -16(%rbp), %rsi
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
@@ -81,6 +73,9 @@ _implement_context_4_4:
 	movq $_None_format, %rdi
 	call printf
 _implement_context_4_5:
+	xorq %rax, %rax
+	movq $_flush, %rdi
+	call printf
 	movq %rbx, %rsp
 	popq %rbx
 	popq %r11
@@ -336,15 +331,13 @@ _Error_gestion:
 	movq -8(%rbp), %rbp
 	movq %rbp, %rsp
 	xorq %rax, %rax
-	movq _Error_message, %rdi
+	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
 	movq $1, %rdi
 	movq $60, %rax
 	syscall
 	.data
-main_0_1:
-	.string "Hello, World!"
 _True:
 	.string "True"
 _False:
@@ -359,8 +352,10 @@ _list_format_sep:
 	.string ","
 _None_format:
 	.string "None"
+_flush:
+	.string "\n"
 _Error_message:
-	.string "error : detected error while excecuting code"
+	.string "error : detected error while excecuting code\n"
 _None:
 	.quad 0
 	.quad 0
