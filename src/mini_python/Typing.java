@@ -59,8 +59,10 @@ class MyVisitor implements Visitor {
 
   public TFile visit(File f) {
     TFile file = new TFile();
-    for(Def d : f.l) {
-      visit_def(d);
+    for(int i = 0; i < f.l.size(); i++) {
+      if (f.l.get(i).f.id.equals("main"))
+        f.l.set(i,new Def(new Ident("_user_main", f.l.get(i).f.loc), f.l.get(i).l, f.l.get(i).s));
+      visit_def(f.l.get(i));
     }
     f.s.accept(this);
     file.l.add(new TDef(mainFunction, stmt));
@@ -185,11 +187,11 @@ class MyVisitor implements Visitor {
   public void visit(Ecall e) {
     // Find the function
     Function f = currentFunction;
-    Function fun = f.getFunction(e.f.id);
+    Function fun = f.getFunction((e.f.id.equals("main") ? "_user_main" : e.f.id)); // (e.f.id.equals("main") ? "_user_main" : e.f.id) because "main" is rename to "_user_main" in the file
 
     while (fun == null && f.parent != null) {
       f = f.parent;
-      fun = f.getFunction(e.f.id);
+      fun = f.getFunction((e.f.id.equals("main") ? "_user_main" : e.f.id));
     }
 
     // Function undefined
