@@ -32,10 +32,6 @@ public class StackManagement {
       String reg = currentFunction.memory.entrySet().stream().filter(entry -> entry.getValue().equals(v)).findFirst().get().getKey();
       currentFunction.memory.remove(reg);
       currentFunction.reg_age.put(reg, -1);
-      if (Compile.debug){
-        System.out.println("memory state : "+currentFunction.memory.toString());
-        System.out.println("registers age : "+currentFunction.reg_age.toString());
-      }
       return true;
     }
     else
@@ -85,21 +81,20 @@ public class StackManagement {
     if (debug)
       System.out.println("freeing " + reg + " aged " + currentFunction.reg_age.get(reg) + " in " + currentFunction.name);
 
-    if (currentFunction.reg_age.get(reg) == -1 ){
+    // already free
+    if (currentFunction.reg_age.get(reg) == -1 )
       return;
-    }
+    // tmp register
     if (!currentFunction.memory.containsKey(reg))
     {
-      if (debug){
-        System.out.println("Warning: " + reg + " age is " + currentFunction.reg_age.get(reg) + " but is not in the memory");
-        System.out.println("current memory : " + currentFunction.memory);
-        System.out.println("current age : " + currentFunction.reg_age);
-      }
+      if (debug)
+        System.out.println(reg + " was a tempory register");
+
       currentFunction.reg_age.put(reg, -1);
       return;
     }
+    // register containing a variable
     Variable v = currentFunction.memory.get(reg);
-
     if (currentFunction.variables.containsValue(v))
     {// local variable
       result.movq(reg, v.str);

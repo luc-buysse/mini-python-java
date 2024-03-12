@@ -116,20 +116,24 @@ public class Implement {
     result.ret();// list does everything
   }
 
-  public void print() {
+  public void print() {// print the value of %rdi and put a new line at the end if %rsi is 0
     result.label("print");
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
-    // calle save used registers
+    // caller save used registers
     result.pushq("%rax");
-    result.pushq("%rsi");
     result.pushq("%rdx");
     result.pushq("%rcx");
     result.pushq("%r8");
     result.pushq("%r9");
     result.pushq("%r10");
     result.pushq("%r11");
+    // save %rsi in %r12
+    result.pushq("%r12");
+    result.pushq("%r13");
+    result.pushq("%r14");
+    result.movq("%rsi", "%r12");
 
     // aligne the stack for the call of printf
     result.pushq("%rbx");
@@ -146,6 +150,7 @@ public class Implement {
     String print_list = currentFunction.toString() + "_" + currentFunction.tmp++;
     String print_none = currentFunction.toString() + "_" + currentFunction.tmp++;
     String print_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_skip = currentFunction.toString() + "_" + currentFunction.tmp++;
 
     // check type of %rdi
     result.cmpq(0, "(%rdi)");
@@ -183,7 +188,9 @@ public class Implement {
     // exit
     result.label(print_end);
 
-    //flush the buffer
+    //flush the buffer if %r12 is 0
+    result.cmpq(0, "%r12");
+    result.jne(print_skip);
     result.xorq("%rax", "%rax");
     result.movq("$_flush", "%rdi");
     result.dlabel("_flush");
@@ -191,10 +198,14 @@ public class Implement {
 
     result.call("printf");
 
+    result.label(print_skip);
     // realign the stack and return
     result.movq("%rbx", "%rsp");
     result.popq("%rbx");
 
+    result.popq("%r14");
+    result.popq("%r13");
+    result.popq("%r12");
     // restore used registers
     result.popq("%r11");
     result.popq("%r10");
@@ -202,7 +213,6 @@ public class Implement {
     result.popq("%r8");
     result.popq("%rcx");
     result.popq("%rdx");
-    result.popq("%rsi");
     result.popq("%rax");
 
     // Restore the stack pointer and return
@@ -253,18 +263,48 @@ public class Implement {
 
   private void print_list() {
     // print the list
-    result.movq("8(%rdi)", "%rsi");
-    result.movq("$_list_format", "%rdi");
+    result.movq("8(%rdi)", "%r13"); // buffer the length of the list
+    result.leaq("16(%rdi)", "%r14"); // buffer the address of the first element of the list
+    // print the start of the list
+    result.movq("$_list_format_start", "%rdi");
     result.call("printf");
-    // TODO print the list
+    // loop to print the elements of the list
+    String print_list_loop = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String print_list_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+    // 1st passage to print the 1st element without separator
+    result.cmpq(0, "%r13");
+    result.je(print_list_end);
+    result.movq("(%r14)", "%rdi");// element
+    result.movq(1,"%rsi");
+    result.call("print");
+    result.decq("%r13");// count
+    result.leaq("8(%r14)","%r14");
+    // loop to print the other elements with separator
+    result.cmpq(0, "%r13");
+    result.je(print_list_end);
+    result.label(print_list_loop);
+    result.movq("$_list_format_sep", "%rdi");// separator
+    result.xorq("%rax","%rax");
+    result.call("printf");
+    result.movq("(%r14)", "%rdi");// element
+    result.movq(1,"%rsi");
+    result.call("print");
+    result.decq("%r13");// count
+    result.leaq("8(%r14)","%r14");
+    result.cmpq(0, "%r13");
+    result.jg(print_list_loop);
+    result.label(print_list_end);
+    // print the end of the list
+    result.movq("$_list_format_end", "%rdi");
+    result.call("printf");
 
     // create the string for the list format
-    result.dlabel("_list_format");
+    result.dlabel("_list_format_start");
     result.string("[");
     result.dlabel("_list_format_end");
     result.string("]");
     result.dlabel("_list_format_sep");
-    result.string(",");
+    result.string(", ");
   }
 
   private void print_none() {
@@ -394,8 +434,6 @@ public class Implement {
 
     // Reset stack
     result.label("_Error_gestion");
-    result.movq("-8(%rbp)", "%rbp");
-    result.movq("%rbp", "%rsp");
 
     // print error msg
     result.xorq("%rax","%rax");

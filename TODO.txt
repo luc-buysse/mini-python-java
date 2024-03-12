@@ -1,15 +1,9 @@
 TODO:
-1. DONE update equals methode of Function to use uid 
-2. DONE (useless because only know the name yet) check Typing call to use Function uid
-3. DONE validate the Typing test
-4. DONE use the uid in the label in Compile
-5. DONE implement the new eviction algo base
-6. DONE handle global variable memory assignment
-7. DONE handle the calle saving (introduce as variables)
-8. NOT NEEDED free hype allocated memory
-9. implements the compilation of the Statments and Expressions check the need to create a return var and check 
-10. finish print in Compile
-11. Error message with cmov to load the right error message
-12. Error message with unrolling the stack
+1. add error
+5. comp int int create an error : check type checking
+6. list(range(10)) segfault
+7. assignment segfault
+8. if Statments : resynchroniser l'etat de la mémoire à la fin
+9. get segfault
 
 var is the return variable

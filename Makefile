@@ -5,5 +5,5 @@ all:
 	# java -cp lib/java-cup-11a-runtime.jar:bin mini_python.Main test.py
 
 clean:
-	rm -v ./exec/*.s
-	rm -v ./exec-fail/*.s
+	rm ./exec/*.s
+	rm ./exec-fail/*.s
