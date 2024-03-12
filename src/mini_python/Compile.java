@@ -152,8 +152,8 @@ class MyTVisitor implements TVisitor {
 
     if (Compile.debug) {
       System.out.println("currentFunction.fixe_stack_size apres assigment des calle saved registres : " + currentFunction.fixe_stack_size);
-      System.out.println("memory state : "+currentFunction.memory.toString());
-      System.out.println("registers age : "+currentFunction.reg_age.toString());
+      // System.out.println("memory state : "+currentFunction.memory.toString());
+      // System.out.println("registers age : "+currentFunction.reg_age.toString());
     }
 
     // update the stack pointer
@@ -270,11 +270,6 @@ class MyTVisitor implements TVisitor {
         var = sM.createTmp(currentFunction);
         e.e1.accept(this);
 
-        // check the type of the variables aren't None
-        result.cmpq(0, "("+sM.getRegFor(currentFunction, v)+")");
-        result.je("_Error_gestion");
-        result.cmpq(0, "("+sM.getRegFor(currentFunction, var)+")");
-        result.je("_Error_gestion");
     }
     String tmp, tmp2;
 
@@ -291,6 +286,15 @@ class MyTVisitor implements TVisitor {
         String Badd_list = currentFunction.toString() + "_" + currentFunction.tmp++;
         // exit labels
         String Badd_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+        if (Compile.debug){
+          System.out.println("Badd_int_check : "+ Badd_int_check);
+          System.out.println("Badd_string_check : "+ Badd_string_check);
+          System.out.println("Badd_list_check : "+ Badd_list_check);
+          System.out.println("Badd_int : "+ Badd_int);
+          System.out.println("Badd_string : "+ Badd_string);
+          System.out.println("Badd_list : "+ Badd_list);
+          System.out.println("Badd_end : "+ Badd_end);
+        }
         // type check
         result.cmpq(2, "("+sM.getRegFor(currentFunction, v)+")");
         result.je(Badd_int_check);
@@ -432,14 +436,22 @@ class MyTVisitor implements TVisitor {
         result.jne("_Error_gestion");
         // load the value of v
         tmp = sM.getRegFor(currentFunction, v);
-        if (sM.killTmp(currentFunction,v))
+        if (sM.killTmp(currentFunction,v)){
           tmp2 = tmp;// if v is a temporary variable, we can use the same register
+          currentFunction.reg_age.put(tmp2, currentFunction.age++);
+        }
         else
           tmp2 = sM.getReg(currentFunction);
+        String tmp3 = sM.getReg(currentFunction);
         result.movq("8("+ tmp +")", tmp2);
+        result.movq("8("+sM.getRegFor(currentFunction, var)+")", tmp3);
         // do the mult and put result in var
-        result.imulq(tmp2, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.imulq(tmp2, tmp3);
+        result.movq(tmp3, "8("+sM.getRegFor(currentFunction, var)+")");
         sM.freeReg(currentFunction, tmp2);
+        if (Compile.debug) {
+          System.out.println("result of the multiplication in "+var.name);
+        }
         return;
 
       case Bdiv :
@@ -450,40 +462,23 @@ class MyTVisitor implements TVisitor {
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
         // load the value of var in %rax
-        if (var == currentFunction.memory.get("%rax")){
-          result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
-          sM.freeReg(currentFunction, "%rdx");
-        }
-        else if (var == currentFunction.memory.get("%rdx")){
-          sM.freeReg(currentFunction, "%rax");
-          result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
-        }
-        else {
-          sM.freeReg(currentFunction, "%rax");
-          result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
-          sM.freeReg(currentFunction, "%rdx");
-        }
-        // update memory state
+        sM.freeReg(currentFunction, "%rax");
+        currentFunction.reg_age.put("%rax", currentFunction.age);
         currentFunction.memory.put("%rax", var);
+        result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
+        sM.freeReg(currentFunction, "%rdx");
+        // update memory state
+        currentFunction.memory.remove("%rax");
         currentFunction.reg_age.put("%rax", currentFunction.age++);
         currentFunction.reg_age.put("%rdx", currentFunction.age);
         // load the value of v in tmp2
         tmp2 = sM.getRegFor(currentFunction, v);
+        result.movq("8("+ tmp2 +")", tmp2);
+        sM.killTmp(currentFunction,v);
         // do the div and put result in var
         result.cqto();
         result.idivq(tmp2);
-        // update memory state so that the result is in var
-        sM.killTmp(currentFunction,v);
-        currentFunction.memory.put("%rax", var);
-        currentFunction.reg_age.put("%rax", currentFunction.age++);
-        if (tmp2 != "%rax") {
-          currentFunction.memory.remove(tmp2);
-          currentFunction.reg_age.put(tmp2, -1);
-          if (Compile.debug) {
-            System.out.println("memory state : "+currentFunction.memory.toString());
-            System.out.println("registers age : "+currentFunction.reg_age.toString());
-          }
-        }
+        result.movq("%rax", "8("+sM.getRegFor(currentFunction, var)+")");
         return;
 
       case Bmod :
@@ -494,40 +489,23 @@ class MyTVisitor implements TVisitor {
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
         // load the value of var in %rax
-        if (var == currentFunction.memory.get("%rax")){
-          result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
-          sM.freeReg(currentFunction, "%rdx");
-        }
-        else if (var == currentFunction.memory.get("%rdx")){
-          sM.freeReg(currentFunction, "%rax");
-          result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
-        }
-        else {
-          sM.freeReg(currentFunction, "%rax");
-          result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
-          sM.freeReg(currentFunction, "%rdx");
-        }
-        // update memory state
+        sM.freeReg(currentFunction, "%rax");
+        currentFunction.reg_age.put("%rax", currentFunction.age);
         currentFunction.memory.put("%rax", var);
+        result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
+        sM.freeReg(currentFunction, "%rdx");
+        // update memory state
+        currentFunction.memory.remove("%rax");
         currentFunction.reg_age.put("%rax", currentFunction.age++);
         currentFunction.reg_age.put("%rdx", currentFunction.age);
         // load the value of v in tmp2
         tmp2 = sM.getRegFor(currentFunction, v);
+        result.movq("8("+ tmp2 +")", tmp2);
+        sM.killTmp(currentFunction,v);
         // do the div and put result in var
         result.cqto();
         result.idivq(tmp2);
-        // update memory state so that the result is in var
-        sM.killTmp(currentFunction,v);
-        currentFunction.memory.put("%rdx", var);
-        currentFunction.reg_age.put("%rdx", currentFunction.age++);
-        if (tmp2 != "%rdx") {
-          currentFunction.memory.remove(tmp2);
-          currentFunction.reg_age.put(tmp2, -1);
-          if (Compile.debug) {
-            System.out.println("memory state : "+currentFunction.memory.toString());
-            System.out.println("registers age : "+currentFunction.reg_age.toString());
-          }
-        }
+        result.movq("%rdx", "8("+sM.getRegFor(currentFunction, var)+")");
         return;
 
       // comparisons cases
@@ -932,6 +910,8 @@ class MyTVisitor implements TVisitor {
     var = sM.createTmp(currentFunction);
     s.e.accept(this);
     sM.freeReg(currentFunction, "%rdi");
+    sM.freeReg(currentFunction, "%rsi");
+    result.xorq("%rsi","%rsi");// second argument of print is 0 to have a \n at the end
     String tmp = sM.getRegFor(currentFunction, var);
     if (!tmp.equals("%rdi"))
       result.movq(sM.getRegFor(currentFunction, var), "%rdi");
