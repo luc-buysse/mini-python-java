@@ -441,6 +441,9 @@ public class Implement {
     // align the stack and call
     result.andq("$-16", "%rsp");
     result.call("printf");
+    // flush the buffer
+    result.xorq("%rdi", "%rdi");
+    result.call("fflush");
 
     // leave with error code
     result.movq(1,"%rdi");

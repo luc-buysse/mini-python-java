@@ -5,214 +5,150 @@ main_0:
 	pushq %rbp
 	movq %rsp, %rbp
 	subq $120, %rsp
+	subq $8, %rsp
 	movq %rdi, -24(%rbp)
-	movq %rsi, -32(%rbp)
-	movq $3, %rsi
-	leaq 16(,%rsi,8), %rdi
+	movq %r14, -112(%rbp)
+	movq $3, %r14
+	leaq 16(,%r14,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
-	movq %rsi, 8(%rax)
+	movq %r14, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -16(%rbp)
+	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $1, 8(%rax)
-	movq %rax, -120(%rbp)
-	movq $0, %rax
-	movq -120(%rbp), %rdi
-	movq -16(%rbp), %rsi
-	movq %rdi, 16(%rsi,%rax,8)
+	movq $0, %rdi
+	movq -128(%rbp), %r14
+	movq %rax, 16(%r14,%rdi,8)
 	subq $8, %rsp
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $2, 8(%rax)
-	movq %rax, -128(%rbp)
-	movq $1, %rax
-	movq -128(%rbp), %rdi
-	movq %rdi, 16(%rsi,%rax,8)
+	movq $1, %rdi
+	movq %rax, 16(%r14,%rdi,8)
 	subq $8, %rsp
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $3, 8(%rax)
-	movq %rax, -136(%rbp)
-	movq $2, %rax
-	movq -136(%rbp), %rdi
-	movq %rdi, 16(%rsi,%rax,8)
-	movq %rsi, -16(%rbp)
-	movq $3, %rsi
-	leaq 16(,%rsi,8), %rdi
+	movq $2, %rdi
+	movq %rax, 16(%r14,%rdi,8)
+	subq $8, %rsp
+	movq %r15, -120(%rbp)
+	movq $3, %r15
+	leaq 16(,%r15,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
-	movq %rsi, 8(%rax)
+	movq %r15, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -8(%rbp)
-	movq %r14, -112(%rbp)
+	movq %rsi, -32(%rbp)
+	movq %rax, -160(%rbp)
+	movq %r14, -16(%rbp)
 	movq -16(%rbp), %r14
+	movq -168(%rbp), %r15
 	cmpq $2, (%r14)
-	je main_0_4
-	cmpq $3, (%r14)
-	je main_0_5
-	cmpq $4, (%r14)
-	je main_0_6
-	cmpq $1, (%r14)
 	je main_0_7
-	movq %r15, -120(%rbp)
-	movq -144(%rbp), %r15
+	cmpq $3, (%r14)
+	je main_0_8
+	cmpq $4, (%r14)
+	je main_0_9
+	cmpq $1, (%r14)
+	je main_0_10
+	cmpq $0, (%r14)
+	je main_0_6
+	jmp _Error_gestion
+main_0_6:
 	movq %r14, %r15
-	jmp main_0_8
-main_0_4:
-	movq $16, %rdi
-	call _my_malloc
-	movq $2, (%rax)
-	movq 8(%r14), %rdi
-	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp main_0_8
+	jmp main_0_11
 main_0_7:
 	movq $16, %rdi
 	call _my_malloc
-	movq $1, (%rax)
+	movq $2, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp main_0_8
-main_0_5:
-	movq 8(%r14), %rsi
-	leaq 17(,%rsi,1), %rdi
-	call _my_malloc
-	movq $3, (%rax)
-	movq %rsi, 8(%rax)
-	leaq 16(%r14), %rsi
-	leaq 16(%rax), %rdi
-	movq %r8, -56(%rbp)
-	movq %rax, %r8
-	call _my_strcpy
-	subq $16, %r8
-	jmp main_0_8
-main_0_6:
-	movq 8(%r8), %rsi
-	leaq 16(,%rsi,8), %rdi
-	call _my_malloc
-	movq $4, (%rax)
-	movq %rsi, 8(%rax)
-	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r8)
-	je main_0_10
-main_0_9:
-	movq 16(%r8,%rdi,8), %rsi
-	movq %rsi, 16(%rax,%rdi,8)
-	incq %rdi
-	cmpq %rdi, 8(%r8)
-	je main_0_10
-	jmp main_0_9
+	movq %rax, %r15
+	jmp main_0_11
 main_0_10:
-	movq %rax, %r8
+	movq $16, %rdi
+	call _my_malloc
+	movq $1, (%rax)
+	movq 8(%r14), %rdi
+	movq %rdi, 8(%rax)
+	movq %rax, %r15
+	jmp main_0_11
 main_0_8:
-	movq %r15, -144(%rbp)
-	movq $0, %rax
-	movq -8(%rbp), %rdi
-	movq %r8, 16(%rdi,%rax,8)
-	subq $8, %rsp
-	movq %rdi, -8(%rbp)
-	movq %r14, -16(%rbp)
-	movq -16(%rbp), %r14
-	cmpq $2, (%r14)
-	je main_0_12
-	cmpq $3, (%r14)
+	movq 8(%r14), %rsi
+	leaq 17(,%rsi,1), %rdi
+	call _my_malloc
+	movq $3, (%rax)
+	movq %rsi, 8(%rax)
+	leaq 16(%r14), %rsi
+	leaq 16(%rax), %rdi
+	movq %rax, %r15
+	call _my_strcpy
+	jmp main_0_11
+main_0_9:
+	movq 8(%r14), %rsi
+	leaq 16(,%rsi,8), %rdi
+	call _my_malloc
+	movq $4, (%rax)
+	movq %rsi, 8(%rax)
+	xorq %rdi, %rdi
+	cmpq %rdi, 8(%r14)
 	je main_0_13
-	cmpq $4, (%r14)
-	je main_0_14
-	cmpq $1, (%r14)
-	je main_0_15
-	movq -152(%rbp), %r15
-	movq %r14, %r15
-	jmp main_0_16
 main_0_12:
-	movq $16, %rdi
-	call _my_malloc
-	movq $2, (%rax)
-	movq 8(%r14), %rdi
-	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp main_0_16
-main_0_15:
-	movq $16, %rdi
-	call _my_malloc
-	movq $1, (%rax)
-	movq 8(%r14), %rdi
-	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp main_0_16
-main_0_13:
-	movq 8(%r14), %rsi
-	leaq 17(,%rsi,1), %rdi
-	call _my_malloc
-	movq $3, (%rax)
-	movq %rsi, 8(%rax)
-	leaq 16(%r14), %rsi
-	leaq 16(%rax), %rdi
-	movq %rax, %r8
-	call _my_strcpy
-	subq $16, %r8
-	jmp main_0_16
-main_0_14:
-	movq 8(%r8), %rsi
-	leaq 16(,%rsi,8), %rdi
-	call _my_malloc
-	movq $4, (%rax)
-	movq %rsi, 8(%rax)
-	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r8)
-	je main_0_18
-main_0_17:
-	movq 16(%r8,%rdi,8), %rsi
+	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r8)
-	je main_0_18
-	jmp main_0_17
-main_0_18:
-	movq %rax, %r8
-main_0_16:
-	movq %r15, -152(%rbp)
-	movq $1, %rax
-	movq -8(%rbp), %rdi
-	movq %r8, 16(%rdi,%rax,8)
+	cmpq %rdi, 8(%r14)
+	je main_0_13
+	jmp main_0_12
+main_0_13:
+	movq %rax, %r15
+main_0_11:
+	movq %r15, -168(%rbp)
+	movq $0, %rdi
+	movq -160(%rbp), %rsi
+	movq %r15, 16(%rsi,%rdi,8)
 	subq $8, %rsp
-	movq %rdi, -8(%rbp)
+	movq %rsi, -160(%rbp)
 	movq %r14, -16(%rbp)
 	movq -16(%rbp), %r14
+	movq -176(%rbp), %r15
 	cmpq $2, (%r14)
-	je main_0_20
+	je main_0_16
 	cmpq $3, (%r14)
-	je main_0_21
+	je main_0_17
 	cmpq $4, (%r14)
-	je main_0_22
+	je main_0_18
 	cmpq $1, (%r14)
-	je main_0_23
-	movq -160(%rbp), %r15
+	je main_0_19
+	cmpq $0, (%r14)
+	je main_0_15
+	jmp _Error_gestion
+main_0_15:
 	movq %r14, %r15
-	jmp main_0_24
-main_0_20:
+	jmp main_0_20
+main_0_16:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp main_0_24
-main_0_23:
+	movq %rax, %r15
+	jmp main_0_20
+main_0_19:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp main_0_24
-main_0_21:
+	movq %rax, %r15
+	jmp main_0_20
+main_0_17:
 	movq 8(%r14), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -220,64 +156,137 @@ main_0_21:
 	movq %rsi, 8(%rax)
 	leaq 16(%r14), %rsi
 	leaq 16(%rax), %rdi
-	movq %rax, %r8
+	movq %rax, %r15
 	call _my_strcpy
-	subq $16, %r8
-	jmp main_0_24
-main_0_22:
-	movq 8(%r8), %rsi
+	jmp main_0_20
+main_0_18:
+	movq 8(%r14), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r8)
-	je main_0_26
-main_0_25:
-	movq 16(%r8,%rdi,8), %rsi
+	cmpq %rdi, 8(%r14)
+	je main_0_22
+main_0_21:
+	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r8)
-	je main_0_26
-	jmp main_0_25
-main_0_26:
-	movq %rax, %r8
-main_0_24:
-	movq %r15, -160(%rbp)
-	movq $2, %rax
-	movq -8(%rbp), %rdi
-	movq %r8, 16(%rdi,%rax,8)
+	cmpq %rdi, 8(%r14)
+	je main_0_22
+	jmp main_0_21
+main_0_22:
+	movq %rax, %r15
+main_0_20:
+	movq %r15, -176(%rbp)
+	movq $1, %rdi
+	movq -160(%rbp), %rsi
+	movq %r15, 16(%rsi,%rdi,8)
 	subq $8, %rsp
-	movq %rdi, -8(%rbp)
-	movq -8(%rbp), %r15
-	cmpq $2, (%r15)
+	movq %rsi, -160(%rbp)
+	movq %r14, -16(%rbp)
+	movq -16(%rbp), %r14
+	movq -184(%rbp), %r15
+	cmpq $2, (%r14)
+	je main_0_25
+	cmpq $3, (%r14)
+	je main_0_26
+	cmpq $4, (%r14)
+	je main_0_27
+	cmpq $1, (%r14)
 	je main_0_28
-	cmpq $3, (%r15)
-	je main_0_29
-	cmpq $4, (%r15)
-	je main_0_30
-	cmpq $1, (%r15)
-	je main_0_31
-	movq -168(%rbp), %r8
-	movq %r15, %r8
-	jmp main_0_32
+	cmpq $0, (%r14)
+	je main_0_24
+	jmp _Error_gestion
+main_0_24:
+	movq %r14, %r15
+	jmp main_0_29
+main_0_25:
+	movq $16, %rdi
+	call _my_malloc
+	movq $2, (%rax)
+	movq 8(%r14), %rdi
+	movq %rdi, 8(%rax)
+	movq %rax, %r15
+	jmp main_0_29
 main_0_28:
 	movq $16, %rdi
 	call _my_malloc
+	movq $1, (%rax)
+	movq 8(%r14), %rdi
+	movq %rdi, 8(%rax)
+	movq %rax, %r15
+	jmp main_0_29
+main_0_26:
+	movq 8(%r14), %rsi
+	leaq 17(,%rsi,1), %rdi
+	call _my_malloc
+	movq $3, (%rax)
+	movq %rsi, 8(%rax)
+	leaq 16(%r14), %rsi
+	leaq 16(%rax), %rdi
+	movq %rax, %r15
+	call _my_strcpy
+	jmp main_0_29
+main_0_27:
+	movq 8(%r14), %rsi
+	leaq 16(,%rsi,8), %rdi
+	call _my_malloc
+	movq $4, (%rax)
+	movq %rsi, 8(%rax)
+	xorq %rdi, %rdi
+	cmpq %rdi, 8(%r14)
+	je main_0_31
+main_0_30:
+	movq 16(%r14,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%rdi,8)
+	incq %rdi
+	cmpq %rdi, 8(%r14)
+	je main_0_31
+	jmp main_0_30
+main_0_31:
+	movq %rax, %r15
+main_0_29:
+	movq %r15, -184(%rbp)
+	movq $2, %rdi
+	movq -160(%rbp), %rsi
+	movq %r15, 16(%rsi,%rdi,8)
+	subq $8, %rsp
+	movq %rsi, -8(%rbp)
+	movq -8(%rbp), %r15
+	movq %r8, -56(%rbp)
+	movq -192(%rbp), %r8
+	cmpq $2, (%r15)
+	je main_0_34
+	cmpq $3, (%r15)
+	je main_0_35
+	cmpq $4, (%r15)
+	je main_0_36
+	cmpq $1, (%r15)
+	je main_0_37
+	cmpq $0, (%r15)
+	je main_0_33
+	jmp _Error_gestion
+main_0_33:
+	movq %r15, %r8
+	jmp main_0_38
+main_0_34:
+	movq $16, %rdi
+	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp main_0_32
-main_0_31:
+	movq %rax, %r8
+	jmp main_0_38
+main_0_37:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp main_0_32
-main_0_29:
+	movq %rax, %r8
+	jmp main_0_38
+main_0_35:
 	movq 8(%r15), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -285,65 +294,68 @@ main_0_29:
 	movq %rsi, 8(%rax)
 	leaq 16(%r15), %rsi
 	leaq 16(%rax), %rdi
-	movq %r9, -64(%rbp)
-	movq %rax, %r9
+	movq %rax, %r8
 	call _my_strcpy
-	subq $16, %r9
-	jmp main_0_32
-main_0_30:
-	movq 8(%r9), %rsi
+	jmp main_0_38
+main_0_36:
+	movq 8(%r15), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r9)
-	je main_0_34
-main_0_33:
-	movq 16(%r9,%rdi,8), %rsi
+	cmpq %rdi, 8(%r15)
+	je main_0_40
+main_0_39:
+	movq 16(%r15,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r9)
-	je main_0_34
-	jmp main_0_33
-main_0_34:
-	movq %rax, %r9
-main_0_32:
-	movq %r8, -168(%rbp)
+	cmpq %rdi, 8(%r15)
+	je main_0_40
+	jmp main_0_39
+main_0_40:
+	movq %rax, %r8
+main_0_38:
+	movq %r8, -192(%rbp)
 	xorq %rsi, %rsi
-	movq %r9, %rdi
+	movq %r8, %rdi
 	call print
 	subq $8, %rsp
 	movq %r15, -8(%rbp)
 	movq -8(%rbp), %r15
+	movq %r9, -64(%rbp)
+	movq -200(%rbp), %r9
 	cmpq $2, (%r15)
-	je main_0_36
+	je main_0_43
 	cmpq $3, (%r15)
-	je main_0_37
+	je main_0_44
 	cmpq $4, (%r15)
-	je main_0_38
+	je main_0_45
 	cmpq $1, (%r15)
-	je main_0_39
-	movq -176(%rbp), %r8
-	movq %r15, %r8
-	jmp main_0_40
-main_0_36:
+	je main_0_46
+	cmpq $0, (%r15)
+	je main_0_42
+	jmp _Error_gestion
+main_0_42:
+	movq %r15, %r9
+	jmp main_0_47
+main_0_43:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp main_0_40
-main_0_39:
+	movq %rax, %r9
+	jmp main_0_47
+main_0_46:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp main_0_40
-main_0_37:
+	movq %rax, %r9
+	jmp main_0_47
+main_0_44:
 	movq 8(%r15), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -351,32 +363,30 @@ main_0_37:
 	movq %rsi, 8(%rax)
 	leaq 16(%r15), %rsi
 	leaq 16(%rax), %rdi
-	movq %rcx, -48(%rbp)
-	movq %rax, %rcx
+	movq %rax, %r9
 	call _my_strcpy
-	subq $16, %rcx
-	jmp main_0_40
-main_0_38:
-	movq 8(%rcx), %rsi
+	jmp main_0_47
+main_0_45:
+	movq 8(%r15), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%rcx)
-	je main_0_42
-main_0_41:
-	movq 16(%rcx,%rdi,8), %rsi
+	cmpq %rdi, 8(%r15)
+	je main_0_49
+main_0_48:
+	movq 16(%r15,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%rcx)
-	je main_0_42
-	jmp main_0_41
-main_0_42:
-	movq %rax, %rcx
-main_0_40:
-	movq %r8, -176(%rbp)
-	cmpq $4, (%rcx)
+	cmpq %rdi, 8(%r15)
+	je main_0_49
+	jmp main_0_48
+main_0_49:
+	movq %rax, %r9
+main_0_47:
+	movq %r9, -200(%rbp)
+	cmpq $4, (%r9)
 	jne _Error_gestion
 	subq $8, %rsp
 	movq $16, %rdi
@@ -386,14 +396,14 @@ main_0_40:
 	cmpq $2, (%rax)
 	jne _Error_gestion
 	movq 8(%rax), %rdi
-	cmpq %rdi, 8(%rcx)
+	cmpq %rdi, 8(%r9)
 	jge _Error_gestion
 	movq 8(%rax), %rdi
-	movq 16(%rcx,%rdi,8), %rax
+	movq 16(%r9,%rdi,8), %rax
 	cmpq $4, (%rax)
 	jne _Error_gestion
 	subq $8, %rsp
-	movq %rax, -184(%rbp)
+	movq %rax, -208(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
@@ -401,51 +411,55 @@ main_0_40:
 	cmpq $2, (%rax)
 	jne _Error_gestion
 	movq 8(%rax), %rdi
-	movq -184(%rbp), %r8
-	cmpq %rdi, 8(%r8)
+	movq -208(%rbp), %r9
+	cmpq %rdi, 8(%r9)
 	jge _Error_gestion
 	subq $8, %rsp
-	movq %rax, -192(%rbp)
+	movq %rax, -216(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $42, 8(%rax)
-	movq -192(%rbp), %rdi
+	movq -216(%rbp), %rdi
 	movq 8(%rdi), %rdi
-	movq %rax, 16(%r8,%rdi,8)
-	movq %rdi, -192(%rbp)
+	movq %rax, 16(%r9,%rdi,8)
+	movq %rdi, -216(%rbp)
 	subq $8, %rsp
-	movq %rax, -200(%rbp)
+	movq %rax, -224(%rbp)
 	movq %r15, -8(%rbp)
 	movq -8(%rbp), %r15
+	movq -232(%rbp), %r9
 	cmpq $2, (%r15)
-	je main_0_47
+	je main_0_55
 	cmpq $3, (%r15)
-	je main_0_48
+	je main_0_56
 	cmpq $4, (%r15)
-	je main_0_49
+	je main_0_57
 	cmpq $1, (%r15)
-	je main_0_50
-	movq -208(%rbp), %r8
-	movq %r15, %r8
-	jmp main_0_51
-main_0_47:
+	je main_0_58
+	cmpq $0, (%r15)
+	je main_0_54
+	jmp _Error_gestion
+main_0_54:
+	movq %r15, %r9
+	jmp main_0_59
+main_0_55:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp main_0_51
-main_0_50:
+	movq %rax, %r9
+	jmp main_0_59
+main_0_58:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp main_0_51
-main_0_48:
+	movq %rax, %r9
+	jmp main_0_59
+main_0_56:
 	movq 8(%r15), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -453,32 +467,31 @@ main_0_48:
 	movq %rsi, 8(%rax)
 	leaq 16(%r15), %rsi
 	leaq 16(%rax), %rdi
-	movq %rax, %rcx
+	movq %rax, %r9
 	call _my_strcpy
-	subq $16, %rcx
-	jmp main_0_51
-main_0_49:
-	movq 8(%rcx), %rsi
+	jmp main_0_59
+main_0_57:
+	movq 8(%r15), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%rcx)
-	je main_0_53
-main_0_52:
-	movq 16(%rcx,%rdi,8), %rsi
+	cmpq %rdi, 8(%r15)
+	je main_0_61
+main_0_60:
+	movq 16(%r15,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%rcx)
-	je main_0_53
-	jmp main_0_52
-main_0_53:
-	movq %rax, %rcx
-main_0_51:
-	movq %r8, -208(%rbp)
+	cmpq %rdi, 8(%r15)
+	je main_0_61
+	jmp main_0_60
+main_0_61:
+	movq %rax, %r9
+main_0_59:
+	movq %r9, -232(%rbp)
 	xorq %rsi, %rsi
-	movq %rcx, %rdi
+	movq %r9, %rdi
 	call print
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
@@ -486,13 +499,12 @@ main_0_51:
 	movq -24(%rbp), %rdi
 	movq -56(%rbp), %r8
 	movq -64(%rbp), %r9
-	movq -48(%rbp), %rcx
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 print:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -839,6 +851,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall

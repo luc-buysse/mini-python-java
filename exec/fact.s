@@ -22,7 +22,7 @@ main_0:
 	movq %rax, %rdi
 	call print
 	subq $8, %rsp
-	movq %rax, -120(%rbp)
+	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
@@ -38,12 +38,12 @@ main_0:
 	call print
 	movq -8(%rbp), %rdi
 	movq -16(%rbp), %rsi
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 fact_4:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -56,38 +56,42 @@ fact_4:
 	movq $1, 8(%rax)
 	subq $8, %rsp
 	movq %rsi, -16(%rbp)
-	movq %rax, -104(%rbp)
+	movq %rax, -112(%rbp)
 	movq %r14, -96(%rbp)
 	movq -8(%rbp), %r14
-	cmpq $2, (%r14)
-	je fact_4_4
-	cmpq $3, (%r14)
-	je fact_4_5
-	cmpq $4, (%r14)
-	je fact_4_6
-	cmpq $1, (%r14)
-	je fact_4_7
 	movq %r15, -104(%rbp)
-	movq -112(%rbp), %r15
-	movq %r14, %r15
-	jmp fact_4_8
+	movq -120(%rbp), %r15
+	cmpq $2, (%r14)
+	je fact_4_5
+	cmpq $3, (%r14)
+	je fact_4_6
+	cmpq $4, (%r14)
+	je fact_4_7
+	cmpq $1, (%r14)
+	je fact_4_8
+	cmpq $0, (%r14)
+	je fact_4_4
+	jmp _Error_gestion
 fact_4_4:
+	movq %r14, %r15
+	jmp fact_4_9
+fact_4_5:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp fact_4_8
-fact_4_7:
+	movq %rax, %r15
+	jmp fact_4_9
+fact_4_8:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp fact_4_8
-fact_4_5:
+	movq %rax, %r15
+	jmp fact_4_9
+fact_4_6:
 	movq 8(%r14), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -95,45 +99,44 @@ fact_4_5:
 	movq %rsi, 8(%rax)
 	leaq 16(%r14), %rsi
 	leaq 16(%rax), %rdi
-	movq %r8, -40(%rbp)
-	movq %rax, %r8
+	movq %rax, %r15
 	call _my_strcpy
-	subq $16, %r8
-	jmp fact_4_8
-fact_4_6:
-	movq 8(%r8), %rsi
+	jmp fact_4_9
+fact_4_7:
+	movq 8(%r14), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r8)
-	je fact_4_10
-fact_4_9:
-	movq 16(%r8,%rdi,8), %rsi
+	cmpq %rdi, 8(%r14)
+	je fact_4_11
+fact_4_10:
+	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r8)
-	je fact_4_10
-	jmp fact_4_9
-fact_4_10:
-	movq %rax, %r8
-fact_4_8:
-	movq %r15, -112(%rbp)
+	cmpq %rdi, 8(%r14)
+	je fact_4_11
+	jmp fact_4_10
+fact_4_11:
+	movq %rax, %r15
+fact_4_9:
+	movq %r15, -120(%rbp)
+	movq %r8, -40(%rbp)
+	movq -112(%rbp), %r8
 	movq %r8, %rdi
-	movq -104(%rbp), %r15
 	movq %r15, %rsi
 	movq $1, %rax
 	call _my_compare
-	movq $1, (%r8)
+	movq $1, (%r15)
 	cmpq $0, %rax
-	jg fact_4_11
-	movq $1, 8(%r8)
-	jmp fact_4_12
-fact_4_11:
-	movq $0, 8(%r8)
+	jg fact_4_12
+	movq $1, 8(%r15)
+	jmp fact_4_13
 fact_4_12:
-	cmpq $0, 8(%r8)
+	movq $0, 8(%r15)
+fact_4_13:
+	cmpq $0, 8(%r15)
 	je fact_4_0
 	subq $8, %rsp
 	movq $16, %rdi
@@ -152,43 +155,47 @@ fact_4_12:
 fact_4_0:
 fact_4_1:
 	subq $8, %rsp
-	movq %rax, -120(%rbp)
+	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $1, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -128(%rbp)
+	movq %rax, -136(%rbp)
 	movq %r14, -8(%rbp)
 	movq -8(%rbp), %r14
+	movq -144(%rbp), %r8
 	cmpq $2, (%r14)
-	je fact_4_16
-	cmpq $3, (%r14)
-	je fact_4_17
-	cmpq $4, (%r14)
 	je fact_4_18
-	cmpq $1, (%r14)
+	cmpq $3, (%r14)
 	je fact_4_19
-	movq -136(%rbp), %r15
-	movq %r14, %r15
-	jmp fact_4_20
-fact_4_16:
+	cmpq $4, (%r14)
+	je fact_4_20
+	cmpq $1, (%r14)
+	je fact_4_21
+	cmpq $0, (%r14)
+	je fact_4_17
+	jmp _Error_gestion
+fact_4_17:
+	movq %r14, %r8
+	jmp fact_4_22
+fact_4_18:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp fact_4_20
-fact_4_19:
+	movq %rax, %r8
+	jmp fact_4_22
+fact_4_21:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp fact_4_20
-fact_4_17:
+	movq %rax, %r8
+	jmp fact_4_22
+fact_4_19:
 	movq 8(%r14), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -196,76 +203,78 @@ fact_4_17:
 	movq %rsi, 8(%rax)
 	leaq 16(%r14), %rsi
 	leaq 16(%rax), %rdi
-	movq %r9, -48(%rbp)
-	movq %rax, %r9
+	movq %rax, %r8
 	call _my_strcpy
-	subq $16, %r9
-	jmp fact_4_20
-fact_4_18:
-	movq 8(%r9), %rsi
+	jmp fact_4_22
+fact_4_20:
+	movq 8(%r14), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r9)
-	je fact_4_22
-fact_4_21:
-	movq 16(%r9,%rdi,8), %rsi
+	cmpq %rdi, 8(%r14)
+	je fact_4_24
+fact_4_23:
+	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r9)
-	je fact_4_22
-	jmp fact_4_21
+	cmpq %rdi, 8(%r14)
+	je fact_4_24
+	jmp fact_4_23
+fact_4_24:
+	movq %rax, %r8
 fact_4_22:
-	movq %rax, %r9
-fact_4_20:
-	movq %r15, -136(%rbp)
-	movq -128(%rbp), %rdi
+	movq %r8, -144(%rbp)
+	movq -136(%rbp), %rdi
 	cmpq $2, (%rdi)
 	jne _Error_gestion
-	cmpq $2, (%r9)
+	cmpq $2, (%r8)
 	jne _Error_gestion
 	movq 8(%rdi), %rdi
-	subq %rdi, 8(%r9)
+	subq %rdi, 8(%r8)
 	subq $8, %rsp
-	movq %r9, %rax
+	movq %r8, %rax
 	pushq -8(%rbp)
 	call fact_4
 	addq $8, %rsp
 	subq $8, %rsp
 	subq $8, %rsp
-	movq %rax, -152(%rbp)
+	movq %rax, -160(%rbp)
 	movq %r14, -8(%rbp)
 	movq -8(%rbp), %r14
+	movq -168(%rbp), %r8
 	cmpq $2, (%r14)
-	je fact_4_26
-	cmpq $3, (%r14)
-	je fact_4_27
-	cmpq $4, (%r14)
-	je fact_4_28
-	cmpq $1, (%r14)
 	je fact_4_29
-	movq -160(%rbp), %r15
-	movq %r14, %r15
-	jmp fact_4_30
-fact_4_26:
+	cmpq $3, (%r14)
+	je fact_4_30
+	cmpq $4, (%r14)
+	je fact_4_31
+	cmpq $1, (%r14)
+	je fact_4_32
+	cmpq $0, (%r14)
+	je fact_4_28
+	jmp _Error_gestion
+fact_4_28:
+	movq %r14, %r8
+	jmp fact_4_33
+fact_4_29:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp fact_4_30
-fact_4_29:
+	movq %rax, %r8
+	jmp fact_4_33
+fact_4_32:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp fact_4_30
-fact_4_27:
+	movq %rax, %r8
+	jmp fact_4_33
+fact_4_30:
 	movq 8(%r14), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -273,44 +282,42 @@ fact_4_27:
 	movq %rsi, 8(%rax)
 	leaq 16(%r14), %rsi
 	leaq 16(%rax), %rdi
-	movq %rax, %r9
+	movq %rax, %r8
 	call _my_strcpy
-	subq $16, %r9
-	jmp fact_4_30
-fact_4_28:
-	movq 8(%r9), %rsi
+	jmp fact_4_33
+fact_4_31:
+	movq 8(%r14), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r9)
-	je fact_4_32
-fact_4_31:
-	movq 16(%r9,%rdi,8), %rsi
+	cmpq %rdi, 8(%r14)
+	je fact_4_35
+fact_4_34:
+	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r9)
-	je fact_4_32
-	jmp fact_4_31
-fact_4_32:
-	movq %rax, %r9
-fact_4_30:
-	movq %r15, -160(%rbp)
-	movq -152(%rbp), %rdi
+	cmpq %rdi, 8(%r14)
+	je fact_4_35
+	jmp fact_4_34
+fact_4_35:
+	movq %rax, %r8
+fact_4_33:
+	movq %r8, -168(%rbp)
+	movq -160(%rbp), %rdi
 	cmpq $2, (%rdi)
 	jne _Error_gestion
-	cmpq $2, (%r9)
+	cmpq $2, (%r8)
 	jne _Error_gestion
 	movq 8(%rdi), %rdi
-	movq 8(%r9), %r15
-	imulq %rdi, %r15
-	movq %r15, 8(%r9)
-	movq %r9, %rax
+	movq 8(%r8), %rsi
+	imulq %rdi, %rsi
+	movq %rsi, 8(%r8)
+	movq %r8, %rax
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -40(%rbp), %r8
-	movq -48(%rbp), %r9
 	movq -16(%rbp), %rsi
 	movq %rbp, %rsp
 	popq %rbp
@@ -318,7 +325,6 @@ fact_4_30:
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -40(%rbp), %r8
-	movq -48(%rbp), %r9
 	movq -16(%rbp), %rsi
 	movq %rbp, %rsp
 	popq %rbp
@@ -327,6 +333,7 @@ factimp_5:
 	pushq %rbp
 	movq %rsp, %rbp
 	subq $120, %rsp
+	subq $8, %rsp
 	movq %rdi, -8(%rbp)
 	movq $16, %rdi
 	call _my_malloc
@@ -337,35 +344,39 @@ factimp_5:
 	movq %rax, -16(%rbp)
 	movq %r14, -112(%rbp)
 	movq -8(%rbp), %r14
-	cmpq $2, (%r14)
-	je factimp_5_3
-	cmpq $3, (%r14)
-	je factimp_5_4
-	cmpq $4, (%r14)
-	je factimp_5_5
-	cmpq $1, (%r14)
-	je factimp_5_6
 	movq %r15, -120(%rbp)
-	movq -120(%rbp), %r15
+	movq -136(%rbp), %r15
+	cmpq $2, (%r14)
+	je factimp_5_5
+	cmpq $3, (%r14)
+	je factimp_5_6
+	cmpq $4, (%r14)
+	je factimp_5_7
+	cmpq $1, (%r14)
+	je factimp_5_8
+	cmpq $0, (%r14)
+	je factimp_5_4
+	jmp _Error_gestion
+factimp_5_4:
 	movq %r14, %r15
-	jmp factimp_5_7
-factimp_5_3:
+	jmp factimp_5_9
+factimp_5_5:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp factimp_5_7
-factimp_5_6:
+	movq %rax, %r15
+	jmp factimp_5_9
+factimp_5_8:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp factimp_5_7
-factimp_5_4:
+	movq %rax, %r15
+	jmp factimp_5_9
+factimp_5_6:
 	movq 8(%r14), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -373,33 +384,31 @@ factimp_5_4:
 	movq %rsi, 8(%rax)
 	leaq 16(%r14), %rsi
 	leaq 16(%rax), %rdi
-	movq %r8, -56(%rbp)
-	movq %rax, %r8
+	movq %rax, %r15
 	call _my_strcpy
-	subq $16, %r8
-	jmp factimp_5_7
-factimp_5_5:
-	movq 8(%r8), %rsi
+	jmp factimp_5_9
+factimp_5_7:
+	movq 8(%r14), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r8)
-	je factimp_5_9
-factimp_5_8:
-	movq 16(%r8,%rdi,8), %rsi
+	cmpq %rdi, 8(%r14)
+	je factimp_5_11
+factimp_5_10:
+	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r8)
-	je factimp_5_9
-	jmp factimp_5_8
+	cmpq %rdi, 8(%r14)
+	je factimp_5_11
+	jmp factimp_5_10
+factimp_5_11:
+	movq %rax, %r15
 factimp_5_9:
-	movq %rax, %r8
-factimp_5_7:
-	movq %r15, -120(%rbp)
+	movq %r15, -136(%rbp)
 	subq $8, %rsp
-	movq %r8, %rax
+	movq %r15, %rax
 	pushq -8(%rbp)
 	call range
 	addq $8, %rsp
@@ -414,6 +423,7 @@ factimp_5_7:
 	jne _Error_gestion
 	movq %rdx, -40(%rbp)
 	movq %rcx, -48(%rbp)
+	movq %r8, -56(%rbp)
 	movq %r9, -64(%rbp)
 	movq %r10, -72(%rbp)
 	movq %r11, -80(%rbp)
@@ -422,49 +432,54 @@ factimp_5_7:
 	movq %r13, -104(%rbp)
 	movq %r14, -8(%rbp)
 	xorq %rdi, %rdi
-factimp_5_0:
+factimp_5_1:
 	cmpq %rdi, 8(%rax)
-	je factimp_5_1
+	je factimp_5_2
 	movq -24(%rbp), %r14
 	movq 16(%rax,%rdi,8), %r14
 	pushq %rdi
-	movq %rax, -152(%rbp)
+	subq $8, %rsp
+	movq %rax, -168(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $1, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -16(%rbp)
+	movq %rax, -176(%rbp)
 	movq %r14, -24(%rbp)
 	movq -24(%rbp), %r14
+	movq -184(%rbp), %r15
 	cmpq $2, (%r14)
-	je factimp_5_15
+	je factimp_5_19
 	cmpq $3, (%r14)
-	je factimp_5_16
+	je factimp_5_20
 	cmpq $4, (%r14)
-	je factimp_5_17
+	je factimp_5_21
 	cmpq $1, (%r14)
+	je factimp_5_22
+	cmpq $0, (%r14)
 	je factimp_5_18
-	movq -160(%rbp), %r15
+	jmp _Error_gestion
+factimp_5_18:
 	movq %r14, %r15
-	jmp factimp_5_19
-factimp_5_15:
+	jmp factimp_5_23
+factimp_5_19:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp factimp_5_19
-factimp_5_18:
+	movq %rax, %r15
+	jmp factimp_5_23
+factimp_5_22:
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r14), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r14
-	jmp factimp_5_19
-factimp_5_16:
+	movq %rax, %r15
+	jmp factimp_5_23
+factimp_5_20:
 	movq 8(%r14), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -472,203 +487,135 @@ factimp_5_16:
 	movq %rsi, 8(%rax)
 	leaq 16(%r14), %rsi
 	leaq 16(%rax), %rdi
-	movq %rax, %r8
+	movq %rax, %r15
 	call _my_strcpy
-	subq $16, %r8
-	jmp factimp_5_19
-factimp_5_17:
-	movq 8(%r8), %rsi
+	jmp factimp_5_23
+factimp_5_21:
+	movq 8(%r14), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r8)
-	je factimp_5_21
-factimp_5_20:
-	movq 16(%r8,%rdi,8), %rsi
+	cmpq %rdi, 8(%r14)
+	je factimp_5_25
+factimp_5_24:
+	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r8)
-	je factimp_5_21
-	jmp factimp_5_20
-factimp_5_21:
-	movq %rax, %r8
-factimp_5_19:
-	movq %r15, -160(%rbp)
-	movq -16(%rbp), %r15
-	cmpq $2, (%r15)
-	je factimp_5_22
-	cmpq $3, (%r15)
-	je factimp_5_23
-	cmpq $4, (%r15)
-	je factimp_5_24
-	jmp _Error_gestion
-factimp_5_22:
-	cmpq $2, (%r8)
+	cmpq %rdi, 8(%r14)
 	je factimp_5_25
-	jmp _Error_gestion
+	jmp factimp_5_24
 factimp_5_25:
-	movq 8(%r8), %r8
-	addq %r8, 8(%r15)
-	jmp factimp_5_28
+	movq %rax, %r15
 factimp_5_23:
-	cmpq $3, (%r8)
+	movq %r15, -184(%rbp)
+	movq -176(%rbp), %r8
+	cmpq $2, (%r8)
 	je factimp_5_26
+	cmpq $3, (%r8)
+	je factimp_5_27
+	cmpq $4, (%r8)
+	je factimp_5_28
 	jmp _Error_gestion
 factimp_5_26:
-	movq 8(%r15), %rsi
-	addq 8(%r8), %rsi
+	cmpq $2, (%r15)
+	je factimp_5_29
+	jmp _Error_gestion
+factimp_5_29:
+	movq 8(%r15), %r15
+	addq %r15, 8(%r8)
+	jmp factimp_5_32
+factimp_5_27:
+	cmpq $3, (%r15)
+	je factimp_5_30
+	jmp _Error_gestion
+factimp_5_30:
+	movq 8(%r8), %rsi
+	addq 8(%r15), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
 	movq $3, (%rax)
 	movq %rsi, 8(%rax)
-	leaq 16(%r8), %rsi
-	leaq 16(%rax), %rdi
-	movq %rax, %r8
-	call _my_strcpy
 	leaq 16(%r15), %rsi
-	leaq 16(%r8), %rdi
+	leaq 16(%rax), %rdi
+	movq %rax, %r15
+	call _my_strcpy
+	leaq 16(%r8), %rsi
+	leaq 16(%r15), %rdi
 	call _my_strcat
-	movq %r8, %r15
-	jmp factimp_5_28
-factimp_5_24:
-	cmpq $4, (%r8)
-	je factimp_5_27
+	movq %r15, %r8
+	jmp factimp_5_32
+factimp_5_28:
+	cmpq $4, (%r15)
+	je factimp_5_31
 	jmp _Error_gestion
-factimp_5_27:
-	movq 8(%r15), %rsi
-	addq 8(%r8), %rsi
+factimp_5_31:
+	movq 8(%r8), %rsi
+	addq 8(%r15), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	cmpq $0, 8(%r15)
-	je factimp_5_31
-	xorq %rdi, %rdi
-factimp_5_29:
-	movq 16(%r15,%rdi,8), %rsi
-	movq %rsi, 16(%rax,%rsi,8)
-	incq %rdi
-	cmpq %rdi, %rsi
-	jl factimp_5_29
-factimp_5_31:
-	cmpq $0, 8(%r15)
-	je factimp_5_32
-	xorq %rdi, %rdi
-factimp_5_30:
-	movq 16(%r8,%rdi,8), %rsi
-	movq %rsi, 16(%rax,%rsi,8)
-	incq %rdi
-	cmpq %rdi, %rsi
-	jl factimp_5_30
-factimp_5_32:
-	jmp factimp_5_28
-factimp_5_28:
-	subq $8, %rsp
-	movq -16(%rbp), %r8
-	cmpq $2, (%r8)
-	je factimp_5_34
-	cmpq $3, (%r8)
 	je factimp_5_35
-	cmpq $4, (%r8)
+	xorq %rdi, %rdi
+factimp_5_33:
+	movq 16(%r15,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%rdi,8)
+	incq %rdi
+	cmpq %rdi, 8(%r15)
+	jg factimp_5_33
+factimp_5_35:
+	cmpq $0, 8(%r8)
 	je factimp_5_36
-	cmpq $1, (%r8)
-	je factimp_5_37
-	movq -168(%rbp), %r9
-	movq %r8, %r9
-	jmp factimp_5_38
+	movq %rdi, %r15
+	xorq %rdi, %rdi
 factimp_5_34:
+	movq 16(%r8,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%r15,8)
+	incq %rdi
+	incq %r15
+	cmpq %rdi, 8(%r8)
+	jg factimp_5_34
+factimp_5_36:
+	movq %rax, %r8
+	jmp factimp_5_32
+factimp_5_32:
+	subq $8, %rsp
+	movq -16(%rbp), %r15
+	movq -192(%rbp), %r9
+	cmpq $2, (%r15)
+	je factimp_5_39
+	cmpq $3, (%r15)
+	je factimp_5_40
+	cmpq $4, (%r15)
+	je factimp_5_41
+	cmpq $1, (%r15)
+	je factimp_5_42
+	cmpq $0, (%r15)
+	je factimp_5_38
+	jmp _Error_gestion
+factimp_5_38:
+	movq %r15, %r9
+	jmp factimp_5_43
+factimp_5_39:
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
-	movq 8(%r8), %rdi
+	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r8
-	jmp factimp_5_38
-factimp_5_37:
-	movq $16, %rdi
-	call _my_malloc
-	movq $1, (%rax)
-	movq 8(%r8), %rdi
-	movq %rdi, 8(%rax)
-	movq %rax, %r8
-	jmp factimp_5_38
-factimp_5_35:
-	movq 8(%r8), %rsi
-	leaq 17(,%rsi,1), %rdi
-	call _my_malloc
-	movq $3, (%rax)
-	movq %rsi, 8(%rax)
-	leaq 16(%r8), %rsi
-	leaq 16(%rax), %rdi
-	movq %rax, %rcx
-	call _my_strcpy
-	subq $16, %rcx
-	jmp factimp_5_38
-factimp_5_36:
-	movq 8(%rcx), %rsi
-	leaq 16(,%rsi,8), %rdi
-	call _my_malloc
-	movq $4, (%rax)
-	movq %rsi, 8(%rax)
-	xorq %rdi, %rdi
-	cmpq %rdi, 8(%rcx)
-	je factimp_5_40
-factimp_5_39:
-	movq 16(%rcx,%rdi,8), %rsi
-	movq %rsi, 16(%rax,%rdi,8)
-	incq %rdi
-	cmpq %rdi, 8(%rcx)
-	je factimp_5_40
-	jmp factimp_5_39
-factimp_5_40:
-	movq %rax, %rcx
-factimp_5_38:
-	movq %r9, -168(%rbp)
-	cmpq $2, (%r15)
-	jne _Error_gestion
-	cmpq $2, (%rcx)
-	jne _Error_gestion
-	movq 8(%r15), %r15
-	movq 8(%rcx), %rdi
-	imulq %r15, %rdi
-	movq %rdi, 8(%rcx)
-	popq %rdi
-	incq %rdi
-	jmp factimp_5_0
-factimp_5_1:
-	subq $8, %rsp
-	movq %r8, -16(%rbp)
-	movq -16(%rbp), %r15
-	cmpq $2, (%r15)
-	je factimp_5_42
-	cmpq $3, (%r15)
-	je factimp_5_43
-	cmpq $4, (%r15)
-	je factimp_5_44
-	cmpq $1, (%r15)
-	je factimp_5_45
-	movq -176(%rbp), %r8
-	movq %r15, %r8
-	jmp factimp_5_46
+	movq %rax, %r9
+	jmp factimp_5_43
 factimp_5_42:
 	movq $16, %rdi
 	call _my_malloc
-	movq $2, (%rax)
-	movq 8(%r15), %rdi
-	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp factimp_5_46
-factimp_5_45:
-	movq $16, %rdi
-	call _my_malloc
 	movq $1, (%rax)
 	movq 8(%r15), %rdi
 	movq %rdi, 8(%rax)
-	movq %rax, %r15
-	jmp factimp_5_46
-factimp_5_43:
+	movq %rax, %r9
+	jmp factimp_5_43
+factimp_5_40:
 	movq 8(%r15), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
@@ -678,34 +625,108 @@ factimp_5_43:
 	leaq 16(%rax), %rdi
 	movq %rax, %r9
 	call _my_strcpy
-	subq $16, %r9
-	jmp factimp_5_46
-factimp_5_44:
-	movq 8(%r9), %rsi
+	jmp factimp_5_43
+factimp_5_41:
+	movq 8(%r15), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
-	cmpq %rdi, 8(%r9)
-	je factimp_5_48
-factimp_5_47:
-	movq 16(%r9,%rdi,8), %rsi
+	cmpq %rdi, 8(%r15)
+	je factimp_5_45
+factimp_5_44:
+	movq 16(%r15,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r9)
-	je factimp_5_48
-	jmp factimp_5_47
-factimp_5_48:
+	cmpq %rdi, 8(%r15)
+	je factimp_5_45
+	jmp factimp_5_44
+factimp_5_45:
 	movq %rax, %r9
-factimp_5_46:
-	movq %r8, -176(%rbp)
-	movq %r9, %rax
+factimp_5_43:
+	movq %r9, -192(%rbp)
+	cmpq $2, (%r8)
+	jne _Error_gestion
+	cmpq $2, (%r9)
+	jne _Error_gestion
+	movq 8(%r8), %r8
+	movq 8(%r9), %rdi
+	imulq %r8, %rdi
+	movq %rdi, 8(%r9)
+	movq %r15, -16(%rbp)
+	popq %rdi
+	incq %rdi
+	jmp factimp_5_1
+factimp_5_2:
+	subq $8, %rsp
+	movq %r9, -16(%rbp)
+	movq -16(%rbp), %r15
+	movq -200(%rbp), %r8
+	cmpq $2, (%r15)
+	je factimp_5_48
+	cmpq $3, (%r15)
+	je factimp_5_49
+	cmpq $4, (%r15)
+	je factimp_5_50
+	cmpq $1, (%r15)
+	je factimp_5_51
+	cmpq $0, (%r15)
+	je factimp_5_47
+	jmp _Error_gestion
+factimp_5_47:
+	movq %r15, %r8
+	jmp factimp_5_52
+factimp_5_48:
+	movq $16, %rdi
+	call _my_malloc
+	movq $2, (%rax)
+	movq 8(%r15), %rdi
+	movq %rdi, 8(%rax)
+	movq %rax, %r8
+	jmp factimp_5_52
+factimp_5_51:
+	movq $16, %rdi
+	call _my_malloc
+	movq $1, (%rax)
+	movq 8(%r15), %rdi
+	movq %rdi, 8(%rax)
+	movq %rax, %r8
+	jmp factimp_5_52
+factimp_5_49:
+	movq 8(%r15), %rsi
+	leaq 17(,%rsi,1), %rdi
+	call _my_malloc
+	movq $3, (%rax)
+	movq %rsi, 8(%rax)
+	leaq 16(%r15), %rsi
+	leaq 16(%rax), %rdi
+	movq %rax, %r8
+	call _my_strcpy
+	jmp factimp_5_52
+factimp_5_50:
+	movq 8(%r15), %rsi
+	leaq 16(,%rsi,8), %rdi
+	call _my_malloc
+	movq $4, (%rax)
+	movq %rsi, 8(%rax)
+	xorq %rdi, %rdi
+	cmpq %rdi, 8(%r15)
+	je factimp_5_54
+factimp_5_53:
+	movq 16(%r15,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%rdi,8)
+	incq %rdi
+	cmpq %rdi, 8(%r15)
+	je factimp_5_54
+	jmp factimp_5_53
+factimp_5_54:
+	movq %rax, %r8
+factimp_5_52:
+	movq %r8, -200(%rbp)
+	movq %r8, %rax
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
-	movq -56(%rbp), %r8
-	movq -64(%rbp), %r9
-	movq -48(%rbp), %rcx
 	movq -32(%rbp), %rsi
 	movq -88(%rbp), %rbx
 	movq -40(%rbp), %rdx
@@ -713,14 +734,14 @@ factimp_5_46:
 	movq -104(%rbp), %r13
 	movq -72(%rbp), %r10
 	movq -80(%rbp), %r11
+	movq -56(%rbp), %r8
+	movq -64(%rbp), %r9
+	movq -48(%rbp), %rcx
 	movq %rbp, %rsp
 	popq %rbp
 	ret
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
-	movq -56(%rbp), %r8
-	movq -64(%rbp), %r9
-	movq -48(%rbp), %rcx
 	movq -32(%rbp), %rsi
 	movq -88(%rbp), %rbx
 	movq -40(%rbp), %rdx
@@ -728,6 +749,9 @@ factimp_5_46:
 	movq -104(%rbp), %r13
 	movq -72(%rbp), %r10
 	movq -80(%rbp), %r11
+	movq -56(%rbp), %r8
+	movq -64(%rbp), %r9
+	movq -48(%rbp), %rcx
 	movq %rbp, %rsp
 	popq %rbp
 	ret
@@ -1077,6 +1101,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall

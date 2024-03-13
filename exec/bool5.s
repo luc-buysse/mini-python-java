@@ -16,7 +16,7 @@ main_0:
 	movq %rax, %rdi
 	call print
 	subq $8, %rsp
-	movq %rax, -104(%rbp)
+	movq %rax, -112(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
@@ -25,14 +25,14 @@ main_0:
 	movq %rax, %rdi
 	call print
 	subq $8, %rsp
-	movq %rax, -112(%rbp)
+	movq %rax, -120(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq $1, 8(%rax)
 	cmpq $0, 8(%rax)
 	je main_0_3
-	movq %rax, -120(%rbp)
+	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
@@ -42,14 +42,14 @@ main_0_3:
 	movq %rax, %rdi
 	call print
 	subq $8, %rsp
-	movq %rax, -120(%rbp)
+	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq $1, 8(%rax)
 	cmpq $0, 8(%rax)
 	jne main_0_5
-	movq %rax, -128(%rbp)
+	movq %rax, -136(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
@@ -60,12 +60,12 @@ main_0_5:
 	call print
 	movq -8(%rbp), %rdi
 	movq -16(%rbp), %rsi
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 print:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -412,6 +412,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall

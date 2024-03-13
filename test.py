@@ -1,3 +1,3 @@
-a="hello "
-b="world!"
-print(a+b)
+a = 10
+b = 10
+print( 10 == 11 )

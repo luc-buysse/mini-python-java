@@ -12,42 +12,42 @@ main_0:
 	movq $2, (%rax)
 	movq $2, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -104(%rbp)
+	movq %rax, -112(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $1, 8(%rax)
 	movq %rsi, -16(%rbp)
-	movq %rax, -112(%rbp)
+	movq %rax, -120(%rbp)
 	movq %r14, -96(%rbp)
 	movq -112(%rbp), %r14
 	movq %r14, %rdi
 	movq %r15, -104(%rbp)
-	movq -104(%rbp), %r15
+	movq -120(%rbp), %r15
 	movq %r15, %rsi
 	movq $1, %rax
 	call _my_compare
-	movq $1, (%r14)
+	movq $1, (%r15)
 	cmpq $0, %rax
 	jge main_0_2
-	movq $1, 8(%r14)
+	movq $1, 8(%r15)
 	jmp main_0_3
 main_0_2:
-	movq $0, 8(%r14)
+	movq $0, 8(%r15)
 main_0_3:
 	xorq %rsi, %rsi
-	movq %r14, %rdi
+	movq %r15, %rdi
 	call print
 	movq -8(%rbp), %rdi
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -16(%rbp), %rsi
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 print:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -394,6 +394,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall

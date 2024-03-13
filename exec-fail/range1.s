@@ -5,13 +5,14 @@ main_0:
 	pushq %rbp
 	movq %rsp, %rbp
 	subq $112, %rsp
+	subq $8, %rsp
 	movq %rdi, -16(%rbp)
-	movq %rsi, -24(%rbp)
-	movq $0, %rsi
-	leaq 16(,%rsi,8), %rdi
+	movq %r14, -104(%rbp)
+	movq $0, %r14
+	leaq 16(,%r14,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
-	movq %rsi, 8(%rax)
+	movq %r14, 8(%rax)
 	subq $8, %rsp
 	movq %rax, %rax
 	pushq -8(%rbp)
@@ -25,13 +26,13 @@ main_0:
 	addq $8, %rsp
 	subq $8, %rsp
 	movq -16(%rbp), %rdi
-	movq -24(%rbp), %rsi
+	movq -104(%rbp), %r14
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 print:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -378,6 +379,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall

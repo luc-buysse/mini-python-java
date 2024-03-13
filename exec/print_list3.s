@@ -7,76 +7,67 @@ main_0:
 	subq $104, %rsp
 	subq $8, %rsp
 	movq %rdi, -8(%rbp)
-	movq %rsi, -16(%rbp)
-	movq $3, %rsi
-	leaq 16(,%rsi,8), %rdi
+	movq %r14, -96(%rbp)
+	movq $3, %r14
+	leaq 16(,%r14,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
-	movq %rsi, 8(%rax)
+	movq %r14, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -104(%rbp)
+	movq %rax, -112(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $1, 8(%rax)
-	movq %rax, -112(%rbp)
-	movq $0, %rax
-	movq -112(%rbp), %rdi
-	movq -104(%rbp), %rsi
-	movq %rdi, 16(%rsi,%rax,8)
+	movq $0, %rdi
+	movq -112(%rbp), %r14
+	movq %rax, 16(%r14,%rdi,8)
 	subq $8, %rsp
-	movq %rsi, -104(%rbp)
-	movq $2, %rsi
-	leaq 16(,%rsi,8), %rdi
+	movq %r15, -104(%rbp)
+	movq $2, %r15
+	leaq 16(,%r15,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
-	movq %rsi, 8(%rax)
+	movq %r15, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -120(%rbp)
+	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $2, 8(%rax)
-	movq %rax, -128(%rbp)
-	movq $0, %rax
-	movq -128(%rbp), %rdi
-	movq -120(%rbp), %rsi
-	movq %rdi, 16(%rsi,%rax,8)
+	movq $0, %rdi
+	movq -128(%rbp), %r15
+	movq %rax, 16(%r15,%rdi,8)
 	subq $8, %rsp
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $3, 8(%rax)
-	movq %rax, -136(%rbp)
-	movq $1, %rax
-	movq -136(%rbp), %rdi
-	movq %rdi, 16(%rsi,%rax,8)
-	movq $1, %rax
-	movq -104(%rbp), %rdi
-	movq %rsi, 16(%rdi,%rax,8)
+	movq $1, %rdi
+	movq %rax, 16(%r15,%rdi,8)
+	movq $1, %rdi
+	movq %r15, 16(%r14,%rdi,8)
 	subq $8, %rsp
-	movq %rdi, -104(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
 	movq $4, 8(%rax)
-	movq %rax, -144(%rbp)
-	movq $2, %rax
-	movq -144(%rbp), %rdi
-	movq -104(%rbp), %rsi
-	movq %rdi, 16(%rsi,%rax,8)
-	movq %rsi, -104(%rbp)
+	movq $2, %rdi
+	movq %rax, 16(%r14,%rdi,8)
+	movq %rsi, -16(%rbp)
 	xorq %rsi, %rsi
-	movq -104(%rbp), %rdi
+	movq %r14, %rdi
 	call print
 	movq -8(%rbp), %rdi
+	movq -96(%rbp), %r14
+	movq -104(%rbp), %r15
 	movq -16(%rbp), %rsi
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 print:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -423,6 +414,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall

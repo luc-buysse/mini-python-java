@@ -1,8 +1,6 @@
 TODO:
-1. add error
 5. comp int int create an error : check type checking
 6. list(range(10)) segfault
-7. assignment segfault
 8. if Statments : resynchroniser l'etat de la mémoire à la fin
 9. get segfault
 

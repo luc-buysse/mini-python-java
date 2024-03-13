@@ -25,25 +25,25 @@ main_0:
 	call foo_4
 	addq $8, %rsp
 	subq $8, %rsp
-	movq %rax, -144(%rbp)
+	movq %rax, -152(%rbp)
 	movq %r14, -96(%rbp)
-	movq -144(%rbp), %r14
+	movq -136(%rbp), %r14
 	movq %r14, %rdi
 	movq %r15, -104(%rbp)
-	movq -128(%rbp), %r15
+	movq -152(%rbp), %r15
 	movq %r15, %rsi
 	movq $0, %rax
 	call _my_compare
-	movq $1, (%r14)
+	movq $1, (%r15)
 	cmpq $0, %rax
 	jne main_0_6
-	movq $1, 8(%r14)
+	movq $1, 8(%r15)
 	jmp main_0_7
 main_0_6:
-	movq $0, 8(%r14)
+	movq $0, 8(%r15)
 main_0_7:
 	xorq %rsi, %rsi
-	movq %r14, %rdi
+	movq %r15, %rdi
 	call print
 	subq $8, %rsp
 	pushq -8(%rbp)
@@ -55,40 +55,41 @@ main_0_7:
 	call foo_4
 	addq $8, %rsp
 	subq $8, %rsp
-	movq %rax, -176(%rbp)
-	movq -176(%rbp), %r15
-	movq %r15, %rdi
+	movq %rax, -184(%rbp)
+	movq -168(%rbp), %r14
+	movq %r14, %rdi
 	movq %r8, -40(%rbp)
-	movq -160(%rbp), %r8
+	movq -184(%rbp), %r8
 	movq %r8, %rsi
 	movq $0, %rax
 	call _my_compare
-	movq $1, (%r15)
+	movq $1, (%r8)
 	cmpq $0, %rax
 	je main_0_12
-	movq $1, 8(%r15)
+	movq $1, 8(%r8)
 	jmp main_0_13
 main_0_12:
-	movq $0, 8(%r15)
+	movq $0, 8(%r8)
 main_0_13:
 	xorq %rsi, %rsi
-	movq %r15, %rdi
+	movq %r8, %rdi
 	call print
 	movq -8(%rbp), %rdi
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -40(%rbp), %r8
 	movq -16(%rbp), %rsi
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 foo_4:
 	pushq %rbp
 	movq %rsp, %rbp
 	subq $112, %rsp
+	subq $8, %rsp
 	movq %rdi, -16(%rbp)
 	movq $16, %rdi
 	call _my_malloc
@@ -444,6 +445,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall

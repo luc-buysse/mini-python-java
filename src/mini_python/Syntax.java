@@ -372,7 +372,7 @@ class Function {
   // local memory management for code generation
   final HashMap<String, Variable> memory; // map of the variables in the registers
   final HashMap<String, Integer> reg_age; // map of the age of the variables in the registers
-  int fixe_stack_size; // size of the stack frame to get rid of %rsp
+  int stack_size; // next free 8 bytes position in the stack
   int age; // age of the start of the function
   int tmp; // temporary variable and label counter for code generation
 

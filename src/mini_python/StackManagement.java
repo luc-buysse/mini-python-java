@@ -14,11 +14,11 @@ public class StackManagement {
   public Variable createTmp(Function currentFunction) {
     Variable v = Variable.mkVariable("#" + currentFunction.tmp++);
     currentFunction.variables.put(v.name, v);
-    v.str = -(currentFunction.fixe_stack_size++)*8+"(%rbp)";
+    v.str = -(currentFunction.stack_size++)*8+"(%rbp)";
     result.subq("$8", "%rsp");
 
     if (debug)
-      System.out.println("creating tmp " + v.name + " in " + currentFunction.name);
+      System.out.println("creating tmp " + v.name + " in " + currentFunction.name+ "stack position : " + v.str);
 
     return v;
   }

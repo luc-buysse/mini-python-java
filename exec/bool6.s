@@ -12,59 +12,29 @@ main_0:
 	movq $1, (%rax)
 	movq $0, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -104(%rbp)
+	movq %rax, -112(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq $1, 8(%rax)
 	movq %rsi, -16(%rbp)
-	movq %rax, -112(%rbp)
+	movq %rax, -120(%rbp)
 	movq %r14, -96(%rbp)
 	movq -112(%rbp), %r14
 	movq %r14, %rdi
 	movq %r15, -104(%rbp)
-	movq -104(%rbp), %r15
+	movq -120(%rbp), %r15
 	movq %r15, %rsi
-	movq $0, %rax
-	call _my_compare
-	movq $1, (%r14)
-	cmpq $0, %rax
-	jne main_0_2
-	movq $1, 8(%r14)
-	jmp main_0_3
-main_0_2:
-	movq $0, 8(%r14)
-main_0_3:
-	xorq %rsi, %rsi
-	movq %r14, %rdi
-	call print
-	subq $8, %rsp
-	movq $16, %rdi
-	call _my_malloc
-	movq $1, (%rax)
-	movq $0, 8(%rax)
-	subq $8, %rsp
-	movq %rax, -120(%rbp)
-	movq $16, %rdi
-	call _my_malloc
-	movq $1, (%rax)
-	movq $1, 8(%rax)
-	movq %rax, -128(%rbp)
-	movq -128(%rbp), %r15
-	movq %r15, %rdi
-	movq %r8, -40(%rbp)
-	movq -120(%rbp), %r8
-	movq %r8, %rsi
 	movq $0, %rax
 	call _my_compare
 	movq $1, (%r15)
 	cmpq $0, %rax
-	je main_0_6
+	jne main_0_2
 	movq $1, 8(%r15)
-	jmp main_0_7
-main_0_6:
+	jmp main_0_3
+main_0_2:
 	movq $0, 8(%r15)
-main_0_7:
+main_0_3:
 	xorq %rsi, %rsi
 	movq %r15, %rdi
 	call print
@@ -74,27 +44,27 @@ main_0_7:
 	movq $1, (%rax)
 	movq $0, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -136(%rbp)
+	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq $1, 8(%rax)
-	movq %rax, -144(%rbp)
-	movq -144(%rbp), %r8
-	movq %r8, %rdi
-	movq %r9, -48(%rbp)
-	movq -136(%rbp), %r9
-	movq %r9, %rsi
-	movq $1, %rax
+	movq %rax, -136(%rbp)
+	movq -128(%rbp), %r14
+	movq %r14, %rdi
+	movq %r8, -40(%rbp)
+	movq -136(%rbp), %r8
+	movq %r8, %rsi
+	movq $0, %rax
 	call _my_compare
 	movq $1, (%r8)
 	cmpq $0, %rax
-	jge main_0_10
+	je main_0_6
 	movq $1, 8(%r8)
-	jmp main_0_11
-main_0_10:
+	jmp main_0_7
+main_0_6:
 	movq $0, 8(%r8)
-main_0_11:
+main_0_7:
 	xorq %rsi, %rsi
 	movq %r8, %rdi
 	call print
@@ -104,27 +74,27 @@ main_0_11:
 	movq $1, (%rax)
 	movq $0, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -152(%rbp)
+	movq %rax, -144(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq $1, 8(%rax)
-	movq %rax, -160(%rbp)
-	movq -160(%rbp), %r9
-	movq %r9, %rdi
-	movq %rcx, -32(%rbp)
-	movq -152(%rbp), %rcx
-	movq %rcx, %rsi
+	movq %rax, -152(%rbp)
+	movq -144(%rbp), %r14
+	movq %r14, %rdi
+	movq %r9, -48(%rbp)
+	movq -152(%rbp), %r9
+	movq %r9, %rsi
 	movq $1, %rax
 	call _my_compare
 	movq $1, (%r9)
 	cmpq $0, %rax
-	jg main_0_14
+	jge main_0_10
 	movq $1, 8(%r9)
-	jmp main_0_15
-main_0_14:
+	jmp main_0_11
+main_0_10:
 	movq $0, 8(%r9)
-main_0_15:
+main_0_11:
 	xorq %rsi, %rsi
 	movq %r9, %rdi
 	call print
@@ -134,27 +104,27 @@ main_0_15:
 	movq $1, (%rax)
 	movq $0, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -168(%rbp)
+	movq %rax, -160(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq $1, 8(%rax)
-	movq %rax, -176(%rbp)
-	movq -176(%rbp), %rcx
-	movq %rcx, %rdi
-	movq %rbx, -72(%rbp)
-	movq -168(%rbp), %rbx
-	movq %rbx, %rsi
+	movq %rax, -168(%rbp)
+	movq -160(%rbp), %r14
+	movq %r14, %rdi
+	movq %rcx, -32(%rbp)
+	movq -168(%rbp), %rcx
+	movq %rcx, %rsi
 	movq $1, %rax
 	call _my_compare
 	movq $1, (%rcx)
 	cmpq $0, %rax
-	jle main_0_18
+	jg main_0_14
 	movq $1, 8(%rcx)
-	jmp main_0_19
-main_0_18:
+	jmp main_0_15
+main_0_14:
 	movq $0, 8(%rcx)
-main_0_19:
+main_0_15:
 	xorq %rsi, %rsi
 	movq %rcx, %rdi
 	call print
@@ -164,29 +134,59 @@ main_0_19:
 	movq $1, (%rax)
 	movq $0, 8(%rax)
 	subq $8, %rsp
-	movq %rax, -184(%rbp)
+	movq %rax, -176(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $1, (%rax)
 	movq $1, 8(%rax)
-	movq %rax, -192(%rbp)
-	movq -192(%rbp), %rbx
-	movq %rbx, %rdi
-	movq %rdx, -24(%rbp)
-	movq -184(%rbp), %rdx
-	movq %rdx, %rsi
+	movq %rax, -184(%rbp)
+	movq -176(%rbp), %r14
+	movq %r14, %rdi
+	movq %rbx, -72(%rbp)
+	movq -184(%rbp), %rbx
+	movq %rbx, %rsi
 	movq $1, %rax
 	call _my_compare
 	movq $1, (%rbx)
 	cmpq $0, %rax
-	jl main_0_22
+	jle main_0_18
 	movq $1, 8(%rbx)
-	jmp main_0_23
-main_0_22:
+	jmp main_0_19
+main_0_18:
 	movq $0, 8(%rbx)
-main_0_23:
+main_0_19:
 	xorq %rsi, %rsi
 	movq %rbx, %rdi
+	call print
+	subq $8, %rsp
+	movq $16, %rdi
+	call _my_malloc
+	movq $1, (%rax)
+	movq $0, 8(%rax)
+	subq $8, %rsp
+	movq %rax, -192(%rbp)
+	movq $16, %rdi
+	call _my_malloc
+	movq $1, (%rax)
+	movq $1, 8(%rax)
+	movq %rax, -200(%rbp)
+	movq -192(%rbp), %r14
+	movq %r14, %rdi
+	movq %rdx, -24(%rbp)
+	movq -200(%rbp), %rdx
+	movq %rdx, %rsi
+	movq $1, %rax
+	call _my_compare
+	movq $1, (%rdx)
+	cmpq $0, %rax
+	jl main_0_22
+	movq $1, 8(%rdx)
+	jmp main_0_23
+main_0_22:
+	movq $0, 8(%rdx)
+main_0_23:
+	xorq %rsi, %rsi
+	movq %rdx, %rdi
 	call print
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
@@ -197,12 +197,12 @@ main_0_23:
 	movq -40(%rbp), %r8
 	movq -48(%rbp), %r9
 	movq -32(%rbp), %rcx
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
-	movq %rbp, %rsp
-	popq %rbp
-	ret
 print:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -549,6 +549,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall
