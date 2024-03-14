@@ -559,30 +559,30 @@ public class Implement {
     if (debug)
       System.out.println("Beq_Neq_type_not_none_check : "+Beq_Neq_rdi_not_none_check+"\nBeq_Neq_bool_int_check : " + Beq_Neq_bool_int_check + " \nBeq_Neq_list_check : " + Beq_Neq_list_check);
 
-    // check type of var
+    // check type of var for None
     result.cmpq(0, "(%rdi)");
     result.jne(Beq_Neq_rdi_not_none_check);
     result.cmpq(0, "(%rsi)");
-    result.je(eq);
+    result.je(eq);// 1 is None and 2 is None
     result.jmp(inf_t);// 1 is None and 2 is not None
-    result.label(Beq_Neq_rdi_not_none_check);
-    // check type of v for none
+    result.label(Beq_Neq_rdi_not_none_check); // 1 is not None
+    // check type of v for None
     result.cmpq(0, "(%rsi)");
     result.je(inf_t);// 1 is not None and 2 is None
-    // check type of v none is already checked
+    // check type of var (None is already checked)
     result.cmpq(3, "(%rdi)");
     result.jl(Beq_Neq_bool_int_check);
     result.jg(Beq_Neq_list_check);
-    // v is a string
+    // var is a string
     result.cmpq(3, "(%rsi)");
     result.jne(inf_t);
     result.jmp(string_operation);
-    // v is a boolean or an int
+    // var is a boolean or an int
     result.label(Beq_Neq_bool_int_check);
     result.cmpq(2, "(%rsi)");
     result.jg(inf_t);
     result.jmp(bool_int_operation);
-    // v is a list
+    // var is a list
     result.label(Beq_Neq_list_check);
     result.cmpq(4, "(%rsi)");
     result.jne(inf_t);

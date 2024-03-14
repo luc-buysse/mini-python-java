@@ -1,3 +1,4 @@
-a = 10
-b = 10
-print( 10 == 11 )
+def foo():
+    x = 1
+
+print (foo()==foo())

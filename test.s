@@ -4,59 +4,59 @@ main:
 main_0:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $120, %rsp
+	subq $104, %rsp
 	subq $8, %rsp
-	movq %rdi, -24(%rbp)
-	movq $16, %rdi
-	call _my_malloc
-	movq $2, (%rax)
-	movq $10, 8(%rax)
+	pushq -8(%rbp)
+	call foo_4
+	addq $8, %rsp
 	subq $8, %rsp
-	movq %rax, -8(%rbp)
-	movq $16, %rdi
-	call _my_malloc
-	movq $2, (%rax)
-	movq $10, 8(%rax)
-	subq $8, %rsp
-	movq %rax, -16(%rbp)
-	movq $16, %rdi
-	call _my_malloc
-	movq $2, (%rax)
-	movq $11, 8(%rax)
-	subq $8, %rsp
-	movq %rax, -144(%rbp)
-	movq $16, %rdi
-	call _my_malloc
-	movq $2, (%rax)
-	movq $10, 8(%rax)
-	movq %rsi, -32(%rbp)
-	movq %rax, -152(%rbp)
-	movq %r14, -112(%rbp)
-	movq -144(%rbp), %r14
+	pushq -8(%rbp)
+	call foo_4
+	addq $8, %rsp
+	movq %rdi, -8(%rbp)
+	movq %rsi, -16(%rbp)
+	movq %rax, -120(%rbp)
+	movq %r14, -96(%rbp)
+	movq -120(%rbp), %r14
 	movq %r14, %rdi
-	movq %r15, -120(%rbp)
-	movq -152(%rbp), %r15
+	movq %r15, -104(%rbp)
+	movq -112(%rbp), %r15
 	movq %r15, %rsi
 	movq $0, %rax
 	call _my_compare
-	movq $1, (%r15)
-	cmpq $0, %rax
-	jne main_0_4
-	movq $1, 8(%r15)
-	jmp main_0_5
-main_0_4:
-	movq $0, 8(%r15)
-main_0_5:
+	movq $1, (%r14)
+	cmpl $0, %eax
+	je main_0_2
+	movq $0, 8(%r14)
+	jmp main_0_3
+main_0_2:
+	movq $1, 8(%r14)
+main_0_3:
 	xorq %rsi, %rsi
-	movq %r15, %rdi
+	movq %r14, %rdi
 	call print
-	movq -24(%rbp), %rdi
-	movq -112(%rbp), %r14
-	movq -120(%rbp), %r15
-	movq -32(%rbp), %rsi
+	andq $-16, %rsp
+	xorq %rdi, %rdi
+	call fflush
 	xorq %rdi, %rdi
 	movq $60, %rax
 	syscall
+foo_4:
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $112, %rsp
+	subq $8, %rsp
+	movq %rdi, -16(%rbp)
+	movq $16, %rdi
+	call _my_malloc
+	movq $2, (%rax)
+	movq $1, 8(%rax)
+	movq %rax, -8(%rbp)
+	movq $16, %rdi
+	call _my_malloc
+	movq $0, (%rax)
+	movq $0, 8(%rax)
+	movq -16(%rbp), %rdi
 	movq %rbp, %rsp
 	popq %rbp
 	ret
@@ -79,51 +79,51 @@ print:
 	andq $-16, %rsp
 	xorq %rax, %rax
 	cmpq $0, (%rdi)
-	je _implement_context_4_4
+	je _implement_context_5_4
 	cmpq $1, (%rdi)
-	je _implement_context_4_1
+	je _implement_context_5_1
 	cmpq $2, (%rdi)
-	je _implement_context_4_0
+	je _implement_context_5_0
 	cmpq $3, (%rdi)
-	je _implement_context_4_2
+	je _implement_context_5_2
 	cmpq $4, (%rdi)
-	je _implement_context_4_3
+	je _implement_context_5_3
 	jmp _Error_gestion
-_implement_context_4_1:
+_implement_context_5_1:
 	cmpq $0, 8(%rdi)
-	je _implement_context_4_7
+	je _implement_context_5_7
 	movq $_True, %rdi
 	call printf
-	jmp _implement_context_4_8
-_implement_context_4_7:
+	jmp _implement_context_5_8
+_implement_context_5_7:
 	movq $_False, %rdi
 	call printf
-_implement_context_4_8:
-	jmp _implement_context_4_5
-_implement_context_4_0:
+_implement_context_5_8:
+	jmp _implement_context_5_5
+_implement_context_5_0:
 	movq 8(%rdi), %rsi
 	movq $_int_format, %rdi
 	call printf
-	jmp _implement_context_4_5
-_implement_context_4_2:
+	jmp _implement_context_5_5
+_implement_context_5_2:
 	leaq 16(%rdi), %rdi
 	call printf
-	jmp _implement_context_4_5
-_implement_context_4_3:
+	jmp _implement_context_5_5
+_implement_context_5_3:
 	movq 8(%rdi), %r13
 	leaq 16(%rdi), %r14
 	movq $_list_format_start, %rdi
 	call printf
 	cmpq $0, %r13
-	je _implement_context_4_10
+	je _implement_context_5_10
 	movq (%r14), %rdi
 	movq $1, %rsi
 	call print
 	decq %r13
 	leaq 8(%r14), %r14
 	cmpq $0, %r13
-	je _implement_context_4_10
-_implement_context_4_9:
+	je _implement_context_5_10
+_implement_context_5_9:
 	movq $_list_format_sep, %rdi
 	xorq %rax, %rax
 	call printf
@@ -133,21 +133,21 @@ _implement_context_4_9:
 	decq %r13
 	leaq 8(%r14), %r14
 	cmpq $0, %r13
-	jg _implement_context_4_9
-_implement_context_4_10:
+	jg _implement_context_5_9
+_implement_context_5_10:
 	movq $_list_format_end, %rdi
 	call printf
-	jmp _implement_context_4_5
-_implement_context_4_4:
+	jmp _implement_context_5_5
+_implement_context_5_4:
 	movq $_None_format, %rdi
 	call printf
-_implement_context_4_5:
+_implement_context_5_5:
 	cmpq $0, %r12
-	jne _implement_context_4_6
+	jne _implement_context_5_6
 	xorq %rax, %rax
 	movq $_flush, %rdi
 	call printf
-_implement_context_4_6:
+_implement_context_5_6:
 	movq %rbx, %rsp
 	popq %rbx
 	popq %r14
@@ -298,105 +298,121 @@ _my_strcmp:
 _my_compare:
 	pushq %rbp
 	movq %rsp, %rbp
+	cmpq $0, %rax
+	je _implement_context_5_11
 	cmpq $0, (%rdi)
 	je _Error_gestion
 	cmpq $0, (%rsi)
 	je _Error_gestion
-	cmpq $0, %rax
-	je _implement_context_4_11
 	cmpq $3, (%rdi)
-	jl _implement_context_4_17
-	jg _implement_context_4_18
+	jl _implement_context_5_17
+	jg _implement_context_5_18
 	cmpq $3, (%rsi)
 	jne _Error_gestion
-	jmp _implement_context_4_13
-_implement_context_4_17:
+	jmp _implement_context_5_13
+_implement_context_5_17:
 	cmpq $2, (%rsi)
 	jg _Error_gestion
-	jmp _implement_context_4_12
-_implement_context_4_18:
+	jmp _implement_context_5_12
+_implement_context_5_18:
 	cmpq $4, (%rsi)
 	jne _Error_gestion
 	xorq %rax, %rax
-_implement_context_4_20:
+_implement_context_5_20:
 	cmpq %rax, 8(%rdi)
-	je _implement_context_4_19
+	je _implement_context_5_19
 	cmpq %rax, 8(%rsi)
-	je _implement_context_4_16
+	je _implement_context_5_16
+	pushq %rdi
+	pushq %rsi
 	movq 16(%rdi,%rax,8), %rdi
 	movq 16(%rsi,%rax,8), %rsi
 	pushq %rax
 	movq $1, %rax
 	call _my_compare
-	cmpq $1, %rax
-	je _implement_context_4_14
-	jg _implement_context_4_16
+	cmpq $0, %rax
+	jl _implement_context_5_14
+	jg _implement_context_5_16
 	popq %rax
 	incq %rax
-	jmp _implement_context_4_20
-_implement_context_4_19:
+	popq %rsi
+	popq %rdi
+	jmp _implement_context_5_20
+_implement_context_5_19:
 	cmpq %rax, 8(%rsi)
-	je _implement_context_4_15
-	jmp _implement_context_4_14
-_implement_context_4_11:
+	je _implement_context_5_15
+	jmp _implement_context_5_14
+_implement_context_5_11:
+	cmpq $0, (%rdi)
+	jne _implement_context_5_21
+	cmpq $0, (%rsi)
+	je _implement_context_5_15
+	jmp _implement_context_5_14
+_implement_context_5_21:
+	cmpq $0, (%rsi)
+	je _implement_context_5_14
 	cmpq $3, (%rdi)
-	jl _implement_context_4_21
-	jg _implement_context_4_22
+	jl _implement_context_5_22
+	jg _implement_context_5_23
 	cmpq $3, (%rsi)
-	jne _implement_context_4_14
-	jmp _implement_context_4_13
-_implement_context_4_21:
+	jne _implement_context_5_14
+	jmp _implement_context_5_13
+_implement_context_5_22:
 	cmpq $2, (%rsi)
-	jg _implement_context_4_14
-	jmp _implement_context_4_12
-_implement_context_4_22:
+	jg _implement_context_5_14
+	jmp _implement_context_5_12
+_implement_context_5_23:
 	cmpq $4, (%rsi)
-	jne _implement_context_4_14
+	jne _implement_context_5_14
 	xorq %rax, %rax
-_implement_context_4_24:
+_implement_context_5_25:
 	cmpq %rax, 8(%rdi)
-	je _implement_context_4_23
+	je _implement_context_5_24
 	cmpq %rax, 8(%rsi)
-	je _implement_context_4_16
+	je _implement_context_5_16
+	pushq %rdi
+	pushq %rsi
 	movq 16(%rdi,%rax,8), %rdi
 	movq 16(%rsi,%rax,8), %rsi
 	pushq %rax
 	movq $0, %rax
 	call _my_compare
-	cmpq $1, %rax
-	je _implement_context_4_14
-	jg _implement_context_4_16
+	cmpq $0, %rax
+	jl _implement_context_5_14
+	jg _implement_context_5_16
 	popq %rax
 	incq %rax
-	jmp _implement_context_4_24
-_implement_context_4_23:
+	popq %rsi
+	popq %rdi
+	jmp _implement_context_5_25
+_implement_context_5_24:
 	cmpq %rax, 8(%rsi)
-	je _implement_context_4_15
-	jmp _implement_context_4_14
-_implement_context_4_12:
-	movq 8(%rdi), %rdi
-	cmpq %rdi, 8(%rsi)
-	je _implement_context_4_15
-	jg _implement_context_4_16
-	jmp _implement_context_4_14
-_implement_context_4_13:
+	je _implement_context_5_15
+	jmp _implement_context_5_14
+_implement_context_5_12:
+	movq 8(%rsi), %rsi
+	cmpq %rsi, 8(%rdi)
+	je _implement_context_5_15
+	jg _implement_context_5_16
+	jmp _implement_context_5_14
+_implement_context_5_13:
 	leaq 16(%rdi), %rdi
 	leaq 16(%rsi), %rsi
 	call _my_strcmp
 	movq %rbp, %rsp
 	popq %rbp
 	ret
-_implement_context_4_15:
+_implement_context_5_15:
 	movq $0, %rax
 	movq %rbp, %rsp
 	popq %rbp
 	ret
-_implement_context_4_14:
+_implement_context_5_14:
 	movq $-1, %rax
 	movq %rbp, %rsp
 	popq %rbp
 	ret
-_implement_context_4_16:
+_implement_context_5_16:
 	movq $1, %rax
 	movq %rbp, %rsp
 	popq %rbp
@@ -406,6 +422,8 @@ _Error_gestion:
 	movq $_Error_message, %rdi
 	andq $-16, %rsp
 	call printf
+	xorq %rdi, %rdi
+	call fflush
 	movq $1, %rdi
 	movq $60, %rax
 	syscall
@@ -428,6 +446,3 @@ _flush:
 	.string "\n"
 _Error_message:
 	.string "error : detected error while excecuting code\n"
-_None:
-	.quad 0
-	.quad 0

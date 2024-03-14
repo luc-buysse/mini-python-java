@@ -4,6 +4,7 @@ TODO:
 9. get segfault
 12. len ou or segfault
 13. call segfault
+14. for segfault
 
 . opti acces memoire : quand on accede à un registre avec choix forcé, evicter un autre registre et faire un mov reg to reg
 var is the return variable
