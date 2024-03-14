@@ -284,7 +284,7 @@ class MyTVisitor implements TVisitor {
   public void visit(TEcst e)  {
     if (Compile.debug)
       System.out.print("compiling " + e.toString()+" ");
-
+    var = sM.createTmp(currentFunction, var);
     e.c.accept(this);
   }
   public void visit(TEbinop e)  {
@@ -307,6 +307,7 @@ class MyTVisitor implements TVisitor {
         e.e1.accept(this);
     }
     String tmp, tmp2;
+    Variable buf;
 
     switch (e.op) {
       case Badd :
@@ -326,52 +327,58 @@ class MyTVisitor implements TVisitor {
         sM.freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
         sM.freeReg(currentFunction, "%rsi"); currentFunction.reg_age.put("%rsi", currentFunction.age);
         sM.freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
-        tmp2 = sM.getRegFor(currentFunction, var);// arg 1
-        tmp = sM.getRegFor(currentFunction, v);// arg 2
+        String in_1 = sM.getRegFor(currentFunction, var);// arg 1
+        String in_2 = sM.getRegFor(currentFunction, v);// arg 2
+        tmp = sM.getReg(currentFunction);// return value
         // type check
-        result.cmpq(2, "("+tmp+")");
+        result.cmpq(2, "("+in_2+")");
         result.je(Badd_int_check);
-        result.cmpq(3, "("+tmp+")");
+        result.cmpq(3, "("+in_2+")");
         result.je(Badd_string_check);
-        result.cmpq(4, "("+tmp+")");
+        result.cmpq(4, "("+in_2+")");
         result.je(Badd_list_check);
         result.jmp("_Error_gestion");
         // int case
         result.label(Badd_int_check);
-        result.cmpq(2, "("+tmp2+")");
+        result.cmpq(2, "("+in_1+")");
         result.je(Badd_int);
         result.jmp("_Error_gestion");
         result.label(Badd_int);
-        result.movq("8("+tmp2+")", tmp2);// reuse the register because the variable is not used anymore
-        result.addq(tmp2, "8("+tmp+")");// return value in tmp
+        result.movq("8("+in_1+")", tmp);// reuse the register because the variable is not used anymore
+        result.addq("8("+in_2+")", tmp);// result in tmp
+        result.movq("$16", "%rdi");
+        result.call("_my_malloc");
+        result.movq(2, "(%rax)");
+        result.movq(tmp, "8(%rax)");
+        result.movq("%rax",tmp);// return value in tmp
         result.jmp(Badd_end);
         // string case
         result.label(Badd_string_check);
-        result.cmpq(3, "("+tmp2+")");
+        result.cmpq(3, "("+in_1+")");
         result.je(Badd_string);
         result.jmp("_Error_gestion");
         result.label(Badd_string);
         // get the length of the new string to %rsi
-        result.movq("8("+ tmp +")", "%rsi");
-        result.addq("8("+ tmp2 +")", "%rsi");// get the length of the string to construct
+        result.movq("8("+ in_2 +")", "%rsi");
+        result.addq("8("+ in_1 +")", "%rsi");// get the length of the string to construct
         result.leaq("17(,%rsi,1)", "%rdi");// get the length of the memory to allocate 17 = 2*8 + 1
         result.call("_my_malloc");// allocate memory for the list
         result.movq(3, "(%rax)");// store the type of the list
         result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
         // fill the allocated memory
-        result.leaq("16("+tmp2+")", "%rsi");
+        result.leaq("16("+in_1+")", "%rsi");
         result.leaq("16(%rax)", "%rdi");
-        result.movq("%rax", tmp2);// save the address of the new var
+        result.movq("%rax", in_1);// save the address of the new var
         result.call("_my_strcpy");//copy the first string
-        result.leaq("16("+tmp+")", "%rsi");
-        result.leaq("16("+tmp2+")", "%rdi");
+        result.leaq("16("+in_2+")", "%rsi");
+        result.leaq("16("+in_1+")", "%rdi");
         result.call("_my_strcat");//copy the second string into the allocated memory 
-        result.movq(tmp2,tmp);// return value in tmp
+        result.movq(in_1,tmp);// return value in tmp
         // jump to exit
         result.jmp(Badd_end);
         // list case
         result.label(Badd_list_check);
-        result.cmpq(4, "("+tmp2+")");
+        result.cmpq(4, "("+in_1+")");
         result.je(Badd_list);
         result.jmp("_Error_gestion");
         result.label(Badd_list);
@@ -381,34 +388,34 @@ class MyTVisitor implements TVisitor {
         String Badd_list_skip_1 = currentFunction.toString() + "_" + currentFunction.tmp++;
         String Badd_list_skip_2 = currentFunction.toString() + "_" + currentFunction.tmp++;
         // get the length of the new list to %rsi
-        result.movq("8("+ tmp +")", "%rsi");
-        result.addq("8("+ tmp2 +")", "%rsi");// get the length of the list to construct
+        result.movq("8("+ in_2 +")", "%rsi");
+        result.addq("8("+ in_1 +")", "%rsi");// get the length of the list to construct
         result.leaq("16(,%rsi,8)", "%rdi");// get the length of the memory to allocate
         result.call("_my_malloc");// allocate memory for the list
         result.movq(4, "(%rax)");// store the type of the list
         result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
-        // first list (tmp2 arg1)
-        result.cmpq(0, "8("+ tmp2 +")");
+        // first list (in_1 arg1)
+        result.cmpq(0, "8("+ in_1 +")");
         result.je(Badd_list_skip_1);// if len(list_1) <=0, nothing need to be done
         result.xorq("%rdi", "%rdi");// %rdi = 0
         result.label(Badd_list_loop_1);
-        result.movq("16("+tmp2+",%rdi,8)", "%rsi");// store the elements of the list_1 to the allocated memory
+        result.movq("16("+in_1+",%rdi,8)", "%rsi");// store the elements of the list_1 to the allocated memory
         result.movq("%rsi", "16(%rax,%rdi,8)");
         result.incq("%rdi");// increment the counter
-        result.cmpq("%rdi", "8("+ tmp2 +")");
+        result.cmpq("%rdi", "8("+ in_1 +")");
         result.jg(Badd_list_loop_1);
         result.label(Badd_list_skip_1);
         // second list
-        result.cmpq(0, "8("+ tmp +")");
+        result.cmpq(0, "8("+ in_2 +")");
         result.je(Badd_list_skip_2);// if len(list_2) <=0, nothing need to be done
-        result.movq("%rdi", tmp2);// tmp2 is the pointer to the new list memory case to fill
+        result.movq("%rdi", in_1);// in_1 is the pointer to the new list memory case to fill
         result.xorq("%rdi", "%rdi");// %rdi = 0
         result.label(Badd_list_loop_2);
-        result.movq("16("+tmp+",%rdi,8)", "%rsi");// store the elements of the list_2 to the allocated memory
-        result.movq("%rsi", "16(%rax,"+tmp2+",8)");
+        result.movq("16("+in_2+",%rdi,8)", "%rsi");// store the elements of the list_2 to the allocated memory
+        result.movq("%rsi", "16(%rax,"+in_1+",8)");
         result.incq("%rdi");// increment the counter
-        result.incq(tmp2);// increment the counter
-        result.cmpq("%rdi", "8("+ tmp +")");
+        result.incq(in_1);// increment the counter
+        result.cmpq("%rdi", "8("+ in_2 +")");
         result.jg(Badd_list_loop_2);
         result.label(Badd_list_skip_2);
         // put the output in tmp than jump to exit
@@ -418,8 +425,8 @@ class MyTVisitor implements TVisitor {
         result.label(Badd_end);
         // update memory state
         // result variable in tmp, v and var are not used anymore
-        sM.killTmp(currentFunction,var);
         sM.killTmp(currentFunction,v);
+        var = sM.createTmp(currentFunction, var);
         sM.assign(currentFunction, var, tmp);
         currentFunction.reg_age.put("%rdi", -1);
         currentFunction.reg_age.put("%rsi", -1);
@@ -433,17 +440,17 @@ class MyTVisitor implements TVisitor {
         // check type of var
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
-        // load the value of v
-        tmp = sM.getRegFor(currentFunction, v);
-        if (sM.killTmp(currentFunction,v))
-          tmp2 = tmp;// if v is a temporary variable, we can use the same register
-        else
-          tmp2 = sM.getReg(currentFunction);
-        result.movq("8("+ tmp +")", tmp2);
-        // do the sub and put result in var
-        tmp = sM.getRegFor(currentFunction, var);
-        result.subq(tmp2, "8("+ tmp +")");
-        sM.freeReg(currentFunction, tmp2); 
+        // free used regs
+        tmp = sM.getReg(currentFunction);
+        // load the value of var and do the sub
+        result.movq("8("+ sM.getRegFor(currentFunction, var) +")", tmp);
+        result.subq("8("+ sM.getRegFor(currentFunction, v) +")", tmp);// v,var
+        // put the result in var
+        var = sM.createAndAllocate(currentFunction, var);
+        result.movq(2, "("+sM.getRegFor(currentFunction, var)+")");
+        result.movq(tmp, "8("+sM.getRegFor(currentFunction, var)+")");
+        sM.killTmp(currentFunction, v);
+        sM.freeReg(currentFunction, tmp); 
         return;
 
       case Bmul :
@@ -453,20 +460,19 @@ class MyTVisitor implements TVisitor {
         // check type of var
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
-        // load the value of v
-        tmp = sM.getRegFor(currentFunction, v);
-        if (sM.killTmp(currentFunction,v)){
-          tmp2 = tmp;// if v is a temporary variable, we can use the same register
-          currentFunction.reg_age.put(tmp2, currentFunction.age++);
-        }
-        else
-          tmp2 = sM.getReg(currentFunction);
-        String tmp3 = sM.getReg(currentFunction);
-        result.movq("8("+ tmp +")", tmp2);
-        result.movq("8("+sM.getRegFor(currentFunction, var)+")", tmp3);
-        // do the mult and put result in var
-        result.imulq(tmp2, tmp3);
-        result.movq(tmp3, "8("+sM.getRegFor(currentFunction, var)+")");
+        // load the value of v and var
+        tmp = sM.getReg(currentFunction);
+        tmp2 = sM.getReg(currentFunction);
+        result.movq("8("+ sM.getRegFor(currentFunction, v) +")", tmp2);
+        result.movq("8("+sM.getRegFor(currentFunction, var)+")", tmp);
+        // do the mult
+        result.imulq(tmp, tmp2);// result in tmp2
+        var = sM.createAndAllocate(currentFunction, var);
+        result.movq(2, "("+sM.getRegFor(currentFunction, var)+")");
+        result.movq(tmp2, "8("+sM.getRegFor(currentFunction, var)+")");
+        // free regs
+        sM.killTmp(currentFunction, v);
+        sM.freeReg(currentFunction, tmp);
         sM.freeReg(currentFunction, tmp2);
         if (Compile.debug) {
           System.out.println("result of the multiplication in "+var.name);
@@ -480,24 +486,27 @@ class MyTVisitor implements TVisitor {
         // check type of var
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
-        // load the value of var in %rax
+        // free used regs
         sM.freeReg(currentFunction, "%rax");
-        currentFunction.reg_age.put("%rax", currentFunction.age);
-        currentFunction.memory.put("%rax", var);
-        result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
         sM.freeReg(currentFunction, "%rdx");
-        // update memory state
-        currentFunction.memory.remove("%rax");
-        currentFunction.reg_age.put("%rax", currentFunction.age++);
         currentFunction.reg_age.put("%rdx", currentFunction.age);
+        currentFunction.reg_age.put("%rax", currentFunction.age++);
+        // load the value of var in %rax
+        result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
         // load the value of v in tmp2
-        tmp2 = sM.getRegFor(currentFunction, v);
-        result.movq("8("+ tmp2 +")", tmp2);
-        sM.killTmp(currentFunction,v);
+        tmp2 = sM.getReg(currentFunction);
+        result.movq("8("+ sM.getRegFor(currentFunction, v) +")", tmp2);
         // do the div and put result in var
         result.cqto();
         result.idivq(tmp2);
+        var = sM.createAndAllocate(currentFunction, var);
+        result.movq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.movq("%rax", "8("+sM.getRegFor(currentFunction, var)+")");
+        // free used regs
+        sM.freeReg(currentFunction, "%rax");
+        sM.freeReg(currentFunction, "%rdx");
+        sM.freeReg(currentFunction, tmp2);
+        sM.killTmp(currentFunction,v);
         return;
 
       case Bmod :
@@ -507,24 +516,27 @@ class MyTVisitor implements TVisitor {
         // check type of var
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
-        // load the value of var in %rax
+        // free used regs
         sM.freeReg(currentFunction, "%rax");
-        currentFunction.reg_age.put("%rax", currentFunction.age);
-        currentFunction.memory.put("%rax", var);
-        result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
         sM.freeReg(currentFunction, "%rdx");
-        // update memory state
-        currentFunction.memory.remove("%rax");
-        currentFunction.reg_age.put("%rax", currentFunction.age++);
         currentFunction.reg_age.put("%rdx", currentFunction.age);
+        currentFunction.reg_age.put("%rax", currentFunction.age++);
+        // load the value of var in %rax
+        result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
         // load the value of v in tmp2
-        tmp2 = sM.getRegFor(currentFunction, v);
-        result.movq("8("+ tmp2 +")", tmp2);
-        sM.killTmp(currentFunction,v);
+        tmp2 = sM.getReg(currentFunction);
+        result.movq("8("+ sM.getRegFor(currentFunction, v) +")", tmp2);
         // do the div and put result in var
         result.cqto();
         result.idivq(tmp2);
+        var = sM.createAndAllocate(currentFunction, var);
+        result.movq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.movq("%rdx", "8("+sM.getRegFor(currentFunction, var)+")");
+        // free used regs
+        sM.freeReg(currentFunction, "%rax");
+        sM.freeReg(currentFunction, "%rdx");
+        sM.freeReg(currentFunction, tmp2);
+        sM.killTmp(currentFunction,v);
         return;
 
       // comparisons cases
@@ -558,6 +570,7 @@ class MyTVisitor implements TVisitor {
         currentFunction.reg_age.put("%rdi", -1);
         currentFunction.reg_age.put("%rsi", -1);
         sM.killTmp(currentFunction,v);
+        var = sM.createAndAllocate(currentFunction, var);
         result.movq(1, "("+sM.getRegFor(currentFunction, var)+")");
         result.cmpl(0, "%eax");
         String True_label = currentFunction.toString() + "_" + currentFunction.tmp++;
@@ -631,7 +644,25 @@ class MyTVisitor implements TVisitor {
         e.e2.accept(this);
         // exit
         result.label(Band_end);
+        buf = var;
+        var = sM.createAndAllocate(currentFunction, buf);
+        result.cmpq(0, "8("+sM.getRegFor(currentFunction, buf)+")");
+        String Band_end_2 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Band_end_3 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        if (Compile.debug) {
+          System.out.println("Band_end_2 : "+Band_end_2);
+          System.out.println("Band_end_3 : "+Band_end_3);
+        }
+        result.jne(Band_end_2);
+        // true
+        result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.jmp(Band_end_3);
+        result.label(Band_end_2);
+        // false
+        result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.label(Band_end_3);
         return;
+
       case Bor :
         // do the lazy evaluation
         String Bor_end = currentFunction.toString() + "_" + currentFunction.tmp++;
@@ -645,6 +676,24 @@ class MyTVisitor implements TVisitor {
         e.e2.accept(this);
         // exit
         result.label(Bor_end);
+        buf = var;
+        var = sM.createAndAllocate(currentFunction, buf);
+        result.movq(1, "("+sM.getRegFor(currentFunction, var)+")");
+        result.cmpq(0, "8("+sM.getRegFor(currentFunction, buf)+")");
+        String Bor_end_2 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String Bor_end_3 = currentFunction.toString() + "_" + currentFunction.tmp++;
+        if (Compile.debug) {
+          System.out.println("Bor_end_2 : "+Bor_end_2);
+          System.out.println("Bor_end_3 : "+Bor_end_3);
+        }
+        result.jne(Bor_end_2);
+        // true
+        result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.jmp(Bor_end_3);
+        result.label(Bor_end_2);
+        // false
+        result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.label(Bor_end_3);
         return;
     }
   }
@@ -655,7 +704,10 @@ class MyTVisitor implements TVisitor {
     e.e.accept(this);
     sM.freeReg(currentFunction, "%rdi");
     currentFunction.reg_age.put("%rdi", currentFunction.age++);
-    result.movq(sM.getRegFor(currentFunction, var), "%rdi");
+    String in = sM.getRegFor(currentFunction, var);
+    result.cmpq(2, "("+in+")");
+    result.jne("_Error_gestion");
+    result.movq(in, "%rdi");
     sM.freeReg(currentFunction, sM.getRegFor(currentFunction, var));
     result.call("range");
   }
@@ -673,14 +725,13 @@ class MyTVisitor implements TVisitor {
     result.movq(4, "(%rax)");// store the type of the list
     result.movq(size, "8(%rax)");// store the length of the list to the allocated memory
     // update memory state
-    Variable list = var;
+    Variable list = sM.createTmp(currentFunction);// need createTmp to reserve the memory for the list
     sM.assign(currentFunction, list, "%rax");
     sM.freeReg(currentFunction, size);
     sM.freeReg(currentFunction, "%rdi");
     // fill the list
     int i = 0;
     for (TExpr expr : e.l) {
-      var = sM.createTmp(currentFunction);
       expr.accept(this);
       size = sM.getReg(currentFunction);
       result.movq(i++, size);
@@ -722,113 +773,9 @@ class MyTVisitor implements TVisitor {
 
   }
   public void visit(TEident e) {
-
-    // labels
-    String TEident_none = currentFunction.toString() + "_" + currentFunction.tmp++;
-    String TEident_int = currentFunction.toString() + "_" + currentFunction.tmp++;
-    String TEident_string = currentFunction.toString() + "_" + currentFunction.tmp++;
-    String TEident_list = currentFunction.toString() + "_" + currentFunction.tmp++;
-    String TEident_bool = currentFunction.toString() + "_" + currentFunction.tmp++;
-    String TEident_end = currentFunction.toString() + "_" + currentFunction.tmp++;
-    if (Compile.debug) {
-      System.out.println("TEident_none : "+TEident_none);
-      System.out.println("TEident_int : "+TEident_int);
-      System.out.println("TEident_string : "+TEident_string);
-      System.out.println("TEident_list : "+TEident_list);
-      System.out.println("TEident_bool : "+TEident_bool);
-      System.out.println("TEident_end : "+TEident_end);
-    }
-    // prep memory
-    sM.freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
-    sM.freeReg(currentFunction, "%rsi"); currentFunction.reg_age.put("%rsi", currentFunction.age);
-    sM.freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
-    if (currentFunction.memory.containsValue(e.x)) 
-      sM.freeReg(currentFunction, sM.getRegFor(currentFunction, e.x));// save the pointer to the variable
-    String in = sM.getRegFor(currentFunction, e.x);
-    String out = sM.getRegFor(currentFunction, var);
-    // check type
-    result.cmpq(2, "("+in+")");
-    result.je(TEident_int);
-    result.cmpq(3, "("+in+")");
-    result.je(TEident_string);
-    result.cmpq(4, "("+in+")");
-    result.je(TEident_list);
-    result.cmpq(1, "("+in+")");
-    result.je(TEident_bool);
-    result.cmpq(0, "("+in+")");
-    result.je(TEident_none);
-    result.jmp("_Error_gestion");
-    // None
-    result.label(TEident_none);
-    result.movq(in, out);
-    result.jmp(TEident_end);
-    // int
-    result.label(TEident_int);
-    result.movq(16, "%rdi");
-    result.call("_my_malloc");
-    result.movq(2, "(%rax)");
-    result.movq("8("+in+")", "%rdi");
-    result.movq("%rdi", "8(%rax)");
-    result.movq("%rax", out);// save the address of the new var
-    result.jmp(TEident_end);
-    // bool
-    result.label(TEident_bool);
-    result.movq(16, "%rdi");
-    result.call("_my_malloc");
-    result.movq(1, "(%rax)");
-    result.movq("8("+in+")", "%rdi");
-    result.movq("%rdi", "8(%rax)");
-    result.movq("%rax", out);// save the address of the new var
-    result.jmp(TEident_end);
-    // string
-    result.label(TEident_string);
-    result.movq("8("+ in +")", "%rsi");// get the length of the new string to %rsi
-    result.leaq("17(,%rsi,1)", "%rdi");// get the length of the memory to allocate 17 = 2*8 + 1
-    result.call("_my_malloc");// allocate memory for the list
-    result.movq(3, "(%rax)");// store the type of the list
-    result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
-    // fill the allocated memory
-    result.leaq("16("+in+")", "%rsi");
-    result.leaq("16(%rax)", "%rdi");
-    result.movq("%rax", out);// save the address of the new var
-    result.call("_my_strcpy");//copy the string
-    result.jmp(TEident_end);
-    // list
-    result.label(TEident_list);
-    // get the length of the new list to %rsi
-    result.movq("8("+in+")", "%rsi");// get the length of the list to construct
-    result.leaq("16(,%rsi,8)", "%rdi");// get the length of the memory to allocate
-    result.call("_my_malloc");// allocate memory for the list
-    result.movq(4, "(%rax)");// store the type of the list
-    result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
-    // fill the list
-    result.xorq("%rdi","%rdi");// counter
-    String TEident_list_loop = currentFunction.toString() + "_" + currentFunction.tmp++;
-    String TEident_list_end = currentFunction.toString() + "_" + currentFunction.tmp++;
-    result.cmpq("%rdi", "8("+in+")");
-    result.je(TEident_list_end);
-    // loop
-    result.label(TEident_list_loop);
-    result.movq("16("+in+",%rdi,8)", "%rsi");
-    result.movq("%rsi", "16(%rax,%rdi,8)");
-    result.incq("%rdi");
-    // test loop
-    result.cmpq("%rdi", "8("+in+")");
-    result.je(TEident_list_end);
-    result.jmp(TEident_list_loop);
-    // loop end
-    result.label(TEident_list_end);
-    result.movq("%rax", out);// save the address of the new var
-    // exit
-    result.label(TEident_end);
-    // update memory state
-    sM.assign(currentFunction, var, out); 
-    sM.freeReg(currentFunction, "%rdi");
-    sM.freeReg(currentFunction, "%rsi");
-    sM.freeReg(currentFunction, "%rax");
-
     if (Compile.debug)
-    System.out.println("compiling "+e.toString()+" : " + e.x.name + " in " + var.name + " cached in " + out);
+      System.out.println("compiling "+e.toString()+" : ident " + e.x.name);
+    var = e.x;
   }
   public void visit(TEcall e) {
     if (Compile.debug)
@@ -844,16 +791,17 @@ class MyTVisitor implements TVisitor {
     int i = 0;
     for (TExpr arg : e.l) {
       arg.accept(this);
+      var = sM.createTmp(currentFunction,var);
       args[i++] = var;
-      var = sM.createTmp(currentFunction);
     }
     // put args in the stack
     HashSet<Variable> args_emplacement = new HashSet<Variable>();
     if (nb_args > 6) {
       for (int cpt = nb_args-1; cpt >= 6; cpt--) {
+        var = sM.createTmp(currentFunction,var); // reserve the new stack emplacement
         args_emplacement.add(var); // save the emplacement to later free the memory
         result.movq(sM.getRegFor(currentFunction, args[cpt]), var.str); // put the value in the right emplacement
-        var = sM.createTmp(currentFunction); // reserve the new stack emplacement
+        
       }
     }
     // put the rest in the right registers
@@ -865,7 +813,7 @@ class MyTVisitor implements TVisitor {
     // free %rax
     sM.freeReg(currentFunction, "%rax");
 
-    // call the function
+    // call the function           
     result.pushq("-8(%rbp)");
     result.call(called_label);
     result.addq("$8", "%rsp");// remove the main %rbp address from the stack
@@ -880,13 +828,14 @@ class MyTVisitor implements TVisitor {
     for (int cpt = 0; cpt < ((nb_args<6)?nb_args:6); cpt++) {
       currentFunction.reg_age.put(registers[cpt], -1);
     }
+    var = sM.createTmp(currentFunction,var);
     sM.assign(currentFunction, var, "%rax");
   }
   public void visit(TEget e) {
     // get the element e2 of a list e1
     if (Compile.debug)
       System.out.println("compiling "+e.toString()+" : get element " + e.e2.toString() + " of " + e.e1.toString());
-
+    // rework TODO
     // get the list
     e.e1.accept(this);
     Variable list = var;
@@ -921,8 +870,7 @@ class MyTVisitor implements TVisitor {
       System.out.println("if_else : "+if_else);
       System.out.println("if_end : "+if_end);
     }
-    
-    var = sM.createTmp(currentFunction);
+
     s.e.accept(this);
     result.cmpq(0, "8("+sM.getRegFor(currentFunction, var)+")");
     result.je(if_else);
@@ -936,7 +884,6 @@ class MyTVisitor implements TVisitor {
     if (Compile.debug)
       System.out.println("compiling"+s.toString()+" : return in " + currentFunction.name);
 
-    var = sM.createTmp(currentFunction);
     s.e.accept(this);
     result.movq(sM.getRegFor(currentFunction, var), "%rax");// result in %rax
     
@@ -953,7 +900,6 @@ class MyTVisitor implements TVisitor {
     if (Compile.debug)
       System.out.println("compiling "+s.toString()+" : assignement of " + s.e.toString() + " in "+ s.x.name);
 
-    var = sM.createTmp(currentFunction);// create buffer for the expression
     s.e.accept(this);// get the value of the expression
     sM.assign(currentFunction, s.x, sM.getRegFor(currentFunction, var)); // assign the value to the variable
     sM.killTmp(currentFunction,var);// kill the buffer
@@ -963,7 +909,6 @@ class MyTVisitor implements TVisitor {
     if (Compile.debug)
       System.out.println("compiling "+s.toString()+" : print of " + s.e.toString());
 
-    var = sM.createTmp(currentFunction);
     s.e.accept(this);
     sM.freeReg(currentFunction, "%rdi");
     sM.freeReg(currentFunction, "%rsi");
@@ -984,7 +929,7 @@ class MyTVisitor implements TVisitor {
     // for x in e do s
     if (Compile.debug)
       System.out.println("compiling "+s.toString()+" : for loop of var "+s.x.name+" iterating on "+ s.e.toString() + " doing "+ s.s.toString());
-
+    // debug TODO
     // labels
     String TSfor_loop = currentFunction.toString() + "_" + currentFunction.tmp++;
     String TSfor_end = currentFunction.toString() + "_" + currentFunction.tmp++;
@@ -993,7 +938,6 @@ class MyTVisitor implements TVisitor {
       System.out.println("TSfor_end : "+TSfor_end);
     }
     // get the list
-    var = sM.createTmp(currentFunction);
     s.e.accept(this);
     Variable list = var;
     String tmp = sM.getRegFor(currentFunction, list);
@@ -1029,16 +973,14 @@ class MyTVisitor implements TVisitor {
   public void visit(TSeval s) {
     if (Compile.debug)
       System.out.println("compiling "+s.toString()+" :  eval of "+ s.e.toString());
-    var = sM.createTmp(currentFunction);
     s.e.accept(this);
   }
   public void visit(TSset s) {
     // set the element e2 of a list e1 to a value e3
     if (Compile.debug)
       System.out.println("compiling "+s.toString()+" : set element " + s.e2.toString() + " of " + s.e1.toString() + " to " + s.e3.toString());
-
+    // adapt TODO
     // get the list
-    var = sM.createTmp(currentFunction);
     s.e1.accept(this);
     Variable list = var;
     result.cmpq(4, "("+sM.getRegFor(currentFunction, list)+")");

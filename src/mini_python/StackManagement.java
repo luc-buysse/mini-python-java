@@ -13,7 +13,7 @@ public class StackManagement {
 
   public Variable createTmp(Function currentFunction) {
     Variable v = Variable.mkVariable("#" + currentFunction.tmp++);
-    currentFunction.variables.put(v.name, v);
+    currentFunction.variables.put(v.name, v); 
     v.str = -(currentFunction.stack_size++)*8+"(%rbp)";
     result.subq("$8", "%rsp");
 
@@ -21,6 +21,29 @@ public class StackManagement {
       System.out.println("creating tmp " + v.name + " in " + currentFunction.name+ " stack position : " + v.str);
 
     return v;
+  }
+
+  public Variable createAndAllocate(Function currentFunction, Variable buf) {
+    // create a new variable to store the result and allocate it if buf is not a temporary variable
+    Variable var = createTmp(currentFunction, buf);// create a new variable to store the result
+    if (var != buf){
+      freeReg(currentFunction, "%rdi");currentFunction.reg_age.put("%rdi", currentFunction.age);
+      freeReg(currentFunction, "%rax");currentFunction.reg_age.put("%rax", currentFunction.age++);
+      result.movq("$16", "%rdi");
+      result.call("_my_malloc");
+      result.movq("%rax", getRegFor(currentFunction, var));
+      freeReg(currentFunction, "%rdi");
+      freeReg(currentFunction, "%rax");
+    }
+    return var;
+  }
+
+  public Variable createTmp(Function currentFunction, Variable var) {
+    // create a temporary variable if needed
+    if (var != null && var.name.charAt(0) == '#')
+      return var;
+    // var wasn't a temporary variable, create one
+    return createTmp(currentFunction);
   }
 
   public boolean killTmp(Function currentFunction, Variable v) {
