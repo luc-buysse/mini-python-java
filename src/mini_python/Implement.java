@@ -460,12 +460,6 @@ public class Implement {
     if (debug)
       System.out.println("compiling .my_compare in " + currentFunction.name);
 
-    // check the type of the variables aren't None
-    result.cmpq(0, "(%rdi)");
-    result.je("_Error_gestion");
-    result.cmpq(0, "(%rsi)");
-    result.je("_Error_gestion");
-
     // create operations labels
     // operation labels
     String Beq_Neq = currentFunction.toString() + "_" + currentFunction.tmp++;
@@ -485,7 +479,12 @@ public class Implement {
 
 
     // Comp
-    // labels for type check
+    // check the type of the variables aren't None
+    result.cmpq(0, "(%rdi)");
+    result.je("_Error_gestion");
+    result.cmpq(0, "(%rsi)");
+    result.je("_Error_gestion");
+    // labels for advanced type check
     String Comp_bool_int_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Comp_list_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     if (debug)
@@ -554,26 +553,36 @@ public class Implement {
     // Beq_Neq
     result.label(Beq_Neq);
     // labels
+    String Beq_Neq_rdi_not_none_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Beq_Neq_bool_int_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Beq_Neq_list_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     if (debug)
-      System.out.println("Beq_Neq_bool_int_check : " + Beq_Neq_bool_int_check + " \nBeq_Neq_list_check : " + Beq_Neq_list_check);
+      System.out.println("Beq_Neq_type_not_none_check : "+Beq_Neq_rdi_not_none_check+"\nBeq_Neq_bool_int_check : " + Beq_Neq_bool_int_check + " \nBeq_Neq_list_check : " + Beq_Neq_list_check);
 
-    // check type of v
+    // check type of var
+    result.cmpq(0, "(%rdi)");
+    result.jne(Beq_Neq_rdi_not_none_check);
+    result.cmpq(0, "(%rsi)");
+    result.je(eq);
+    result.jmp(inf_t);// 1 is None and 2 is not None
+    result.label(Beq_Neq_rdi_not_none_check);
+    // check type of v for none
+    result.cmpq(0, "(%rsi)");
+    result.je(inf_t);// 1 is not None and 2 is None
+    // check type of v none is already checked
     result.cmpq(3, "(%rdi)");
     result.jl(Beq_Neq_bool_int_check);
     result.jg(Beq_Neq_list_check);
-    // check type of v
-    // if v is a string
+    // v is a string
     result.cmpq(3, "(%rsi)");
     result.jne(inf_t);
     result.jmp(string_operation);
-    // if v is a boolean or an int
+    // v is a boolean or an int
     result.label(Beq_Neq_bool_int_check);
     result.cmpq(2, "(%rsi)");
     result.jg(inf_t);
     result.jmp(bool_int_operation);
-    // if v is a list
+    // v is a list
     result.label(Beq_Neq_list_check);
     result.cmpq(4, "(%rsi)");
     result.jne(inf_t);
