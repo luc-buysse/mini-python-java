@@ -441,6 +441,18 @@ class Function {
   public String toString() {
     return name + "_" + uid;
   }
+
+  public Function copy() {
+    Function f = new Function(this.name, this.params, this.parent);
+    f.variables.putAll(this.variables);
+    f.functions.putAll(this.functions);
+    f.memory.putAll(this.memory);
+    f.reg_age.putAll(this.reg_age);
+    f.stack_size = this.stack_size;
+    f.age = this.age;
+    f.tmp = this.tmp;
+    return f;
+  }
 }
 
 abstract class TExpr {
