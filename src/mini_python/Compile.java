@@ -836,26 +836,29 @@ class MyTVisitor implements TVisitor {
       args[i++] = var;
       var = sM.createTmp(currentFunction);
     }
-    // put the args in the right registers
+    // put args in the stack
+    HashSet<Variable> args_emplacement = new HashSet<Variable>();
+    if (nb_args > 6) {
+      for (int cpt = nb_args-1; cpt >= 6; cpt--) {
+        args_emplacement.add(var); // save the emplacement to later free the memory
+        result.movq(sM.getRegFor(currentFunction, args[cpt]), var.str); // put the value in the right emplacement
+        var = sM.createTmp(currentFunction); // reserve the new stack emplacement
+      }
+    }
+    // put the rest in the right registers
     for (int cpt = 0; cpt < ((nb_args<6)?nb_args:6); cpt++) {
       if (sM.getRegFor(currentFunction, args[cpt]) != registers[cpt])
         sM.freeReg(currentFunction, registers[cpt]);
       result.movq(sM.getRegFor(currentFunction, args[cpt]), registers[cpt]);
     }
-    // rest in the stack
-    if (nb_args > 6) {
-      for (int cpt = nb_args-1; cpt >= 6; cpt--) {
-        result.pushq(sM.getRegFor(currentFunction, args[cpt]));
-      }
-    }
+
     // call the function
     result.pushq("-8(%rbp)");
     result.call(called_label);
-    //reset the stack
-    if (nb_args > 6) {
-      result.addq("$"+(nb_args-6+1)*8, "%rsp");
-    } else {
-      result.addq("$8", "%rsp");
+    result.addq("$8", "%rsp");// remove the main %rbp address from the stack
+    //reset the stack use
+    for (Variable emplacement : args_emplacement) {
+      sM.killTmp(currentFunction,emplacement);
     }
     // update memory state
     for (i = 0; i < nb_args; i++) {
@@ -864,7 +867,6 @@ class MyTVisitor implements TVisitor {
     for (int cpt = 0; cpt < ((nb_args<6)?nb_args:6); cpt++) {
       currentFunction.reg_age.put(registers[cpt], -1);
     }
-    var = sM.createTmp(currentFunction);
     sM.assign(currentFunction, var, "%rax");
   }
   public void visit(TEget e) {
