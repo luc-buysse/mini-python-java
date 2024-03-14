@@ -77,11 +77,6 @@ class MyTVisitor implements TVisitor {
     // error gestion code
     implement.errorGestion();
 
-    // Generate data for const 
-    result.dlabel("_None");
-    result.quad(0);
-    result.quad(0);
-
     if (Compile.debug)
       System.out.println("**\ncompilation end\n**");
   }
@@ -162,9 +157,9 @@ class MyTVisitor implements TVisitor {
       System.out.println("variables state : "+currentFunction.variables.size()+ " local variables among them "+ (currentFunction.stack_size - stack_size_buf) + " are temporaries");
       HashSet<String> set = new HashSet<>();
       boolean duplicate = false;
-      for (Variable var : currentFunction.variables.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList())){
-          if (!set.add(var.str)) {
-              System.out.println("Duplicate stack location found: " + var.str);
+      for (Variable var_tmp : currentFunction.variables.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList())){
+          if (!set.add(var_tmp.str)) {
+              System.out.println("Duplicate stack location found: " + var_tmp.str+" implemented by "+var_tmp.name);
               duplicate = true;
           }
       }
@@ -172,9 +167,6 @@ class MyTVisitor implements TVisitor {
           System.out.println("No duplicates stack location found");
           System.out.println();
     }
-
-    // restore the calle saved registers
-    sM.restoreCalleSavedRegisters(d.f);
 
     // if main, exit
     if (d.f.name.equals("main")) {
@@ -188,6 +180,10 @@ class MyTVisitor implements TVisitor {
       result.emit("syscall");
     }
     else {
+      // put none in %rax
+      this.visit(new Cnone());
+      // restore the calle saved registers
+      sM.restoreCalleSavedRegisters(d.f);
       // restore the stack pointer and return
       result.movq("%rbp", "%rsp");
       result.popq("%rbp");
@@ -195,8 +191,23 @@ class MyTVisitor implements TVisitor {
     }
   }
   public void visit(Cnone c) {
-    String reg = sM.getRegFor(currentFunction, var);
-    result.movq("$_None", reg);
+    // Set up the var as None (need to allocate memory for the None because comparison with None result is put in the memory)
+    // clean the reg
+    sM.freeReg(currentFunction, "%rax");
+    sM.freeReg(currentFunction, "%rdi");
+
+    // Set up args
+    result.movq("$16", "%rdi");
+
+    // allocate memory for the boolean
+    result.call("_my_malloc");
+
+    // Set up the var as boolean
+    result.movq(0, "(%rax)");
+    result.movq(0, "8(%rax)");
+
+    // update memory state
+    sM.assign(currentFunction, var, "%rax");
 
     if (Compile.debug)
     System.out.println(": (none) in "+var.name);
@@ -881,8 +892,8 @@ class MyTVisitor implements TVisitor {
     result.jne("_Error_gestion");
     // get the index
     var = sM.createTmp(currentFunction);
-    Variable index = var;
     e.e2.accept(this);
+    Variable index = var;
     result.cmpq(2, "("+sM.getRegFor(currentFunction, index)+")");
     result.jne("_Error_gestion");
     // check if the index is in the list
@@ -891,6 +902,7 @@ class MyTVisitor implements TVisitor {
     result.cmpq(tmp, "8("+sM.getRegFor(currentFunction, list)+")");
     result.jge("_Error_gestion");
     // put the variable list[index] in var
+    var = sM.createTmp(currentFunction);// create buffer for the expression
     result.movq("8("+sM.getRegFor(currentFunction, index)+")", tmp);
     result.movq("16("+sM.getRegFor(currentFunction, list)+","+tmp+",8)", sM.getRegFor(currentFunction, var));
     sM.freeReg(currentFunction, tmp);
@@ -912,10 +924,10 @@ class MyTVisitor implements TVisitor {
     s.e.accept(this);
     result.cmpq(0, "8("+sM.getRegFor(currentFunction, var)+")");
     result.je(if_else);
-    s.s1.accept(this);
+    s.s1.accept(this);// regs are modified in memory state but while execution the modification doesn't happen necessarly
     result.jmp(if_end);
     result.label(if_else);// TODO : issue with reg allocation
-    s.s2.accept(this);
+    s.s2.accept(this);// regs are modified memory state but while execution the modification doesn't happen necessarly
     result.label(if_end);
   }
   public void visit(TSreturn s) {
