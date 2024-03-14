@@ -155,6 +155,8 @@ public class StackManagement {
 
   public void restoreCalleSavedRegisters(Function currentFunction) {
     for (Variable v : currentFunction.variables.values()) {
+      if (debug)
+        System.out.println("checking if " + v.name + " need to be restored");
       if (v.name.charAt(0) == '%' && currentFunction.reg_age.get(v.name) != 0 && !v.name.equals("%rax")){
         if (debug) {
           System.out.println("restoring " + v.name);

@@ -862,6 +862,8 @@ class MyTVisitor implements TVisitor {
         sM.freeReg(currentFunction, registers[cpt]);
       result.movq(sM.getRegFor(currentFunction, args[cpt]), registers[cpt]);
     }
+    // free %rax
+    sM.freeReg(currentFunction, "%rax");
 
     // call the function
     result.pushq("-8(%rbp)");

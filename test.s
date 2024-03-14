@@ -9,31 +9,68 @@ main_0:
 	pushq -8(%rbp)
 	call foo_4
 	addq $8, %rsp
+	movq %rdi, -8(%rbp)
+	movq %rsi, -16(%rbp)
+	xorq %rsi, %rsi
+	movq %rax, %rdi
+	call print
 	subq $8, %rsp
+	movq %rax, -112(%rbp)
 	pushq -8(%rbp)
 	call foo_4
 	addq $8, %rsp
-	movq %rdi, -8(%rbp)
-	movq %rsi, -16(%rbp)
+	subq $8, %rsp
 	movq %rax, -120(%rbp)
+	pushq -8(%rbp)
+	call foo_4
+	addq $8, %rsp
+	movq %rax, -128(%rbp)
 	movq %r14, -96(%rbp)
-	movq -120(%rbp), %r14
+	movq -128(%rbp), %r14
 	movq %r14, %rdi
 	movq %r15, -104(%rbp)
-	movq -112(%rbp), %r15
+	movq -120(%rbp), %r15
 	movq %r15, %rsi
 	movq $0, %rax
 	call _my_compare
 	movq $1, (%r14)
 	cmpl $0, %eax
-	je main_0_2
+	je main_0_3
 	movq $0, 8(%r14)
-	jmp main_0_3
-main_0_2:
-	movq $1, 8(%r14)
+	jmp main_0_4
 main_0_3:
+	movq $1, 8(%r14)
+main_0_4:
 	xorq %rsi, %rsi
 	movq %r14, %rdi
+	call print
+	subq $8, %rsp
+	pushq -8(%rbp)
+	call foo_4
+	addq $8, %rsp
+	subq $8, %rsp
+	movq %rax, -136(%rbp)
+	pushq -8(%rbp)
+	call foo_4
+	addq $8, %rsp
+	movq %rax, -144(%rbp)
+	movq -144(%rbp), %r15
+	movq %r15, %rdi
+	movq %r8, -40(%rbp)
+	movq -136(%rbp), %r8
+	movq %r8, %rsi
+	movq $0, %rax
+	call _my_compare
+	movq $1, (%r15)
+	cmpl $0, %eax
+	jne main_0_7
+	movq $0, 8(%r15)
+	jmp main_0_8
+main_0_7:
+	movq $1, 8(%r15)
+main_0_8:
+	xorq %rsi, %rsi
+	movq %r15, %rdi
 	call print
 	andq $-16, %rsp
 	xorq %rdi, %rdi
