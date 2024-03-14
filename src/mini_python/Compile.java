@@ -199,7 +199,7 @@ class MyTVisitor implements TVisitor {
     result.movq("$_None", reg);
 
     if (Compile.debug)
-    System.out.println(" : (none) in "+var.name);
+    System.out.println(": (none) in "+var.name);
   }
   public void visit(Cbool c) {
     // clean the reg
@@ -219,7 +219,7 @@ class MyTVisitor implements TVisitor {
     // update memory state
     sM.assign(currentFunction, var, "%rax");
     if (Compile.debug)
-      System.out.println(" : (boolean) "+c.b+" in "+var.name);
+      System.out.println(": (boolean) "+c.b+" in "+var.name);
   }
   public void visit(Cstring c) {
     // free needed reg
@@ -248,7 +248,7 @@ class MyTVisitor implements TVisitor {
     // update memory state
     sM.assign(currentFunction, var, "%rax");
     if (Compile.debug)
-      System.out.println(" : (string) \""+c.s+"\" in "+var.name);
+      System.out.println(": (string) \""+c.s+"\" in "+var.name);
   }
   public void visit(Cint c) {
     // clean the reg
@@ -268,11 +268,11 @@ class MyTVisitor implements TVisitor {
     // update memory state
     sM.assign(currentFunction, var, "%rax");
     if (Compile.debug)
-      System.out.println(" : (int) "+c.i+" in "+var.name);
+      System.out.println(": (int) "+c.i+" in "+var.name);
   }
   public void visit(TEcst e)  {
     if (Compile.debug)
-      System.out.print("compiling " + e.toString());
+      System.out.print("compiling " + e.toString()+" ");
 
     e.c.accept(this);
   }
@@ -315,8 +315,8 @@ class MyTVisitor implements TVisitor {
         sM.freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
         sM.freeReg(currentFunction, "%rsi"); currentFunction.reg_age.put("%rsi", currentFunction.age);
         sM.freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
-        tmp = sM.getRegFor(currentFunction, v);// arg 2
         tmp2 = sM.getRegFor(currentFunction, var);// arg 1
+        tmp = sM.getRegFor(currentFunction, v);// arg 2
         // type check
         result.cmpq(2, "("+tmp+")");
         result.je(Badd_int_check);
@@ -525,10 +525,10 @@ class MyTVisitor implements TVisitor {
         currentFunction.reg_age.put("%rdi", currentFunction.age);
         currentFunction.reg_age.put("%rsi", currentFunction.age);
         currentFunction.reg_age.put("%rax", currentFunction.age++);
-        // move var in %rdi
-        result.movq(sM.getRegFor(currentFunction, v), "%rdi");
-        // move v in %rsi
-        result.movq(sM.getRegFor(currentFunction, var), "%rsi");
+        // move var in %rdi // e1
+        result.movq(sM.getRegFor(currentFunction, var), "%rdi");
+        // move v in %rsi // e2
+        result.movq(sM.getRegFor(currentFunction, v), "%rsi");
         switch (e.op) {// set up the type check
           case Beq : case Bneq :
             result.movq(0,"%rax");
@@ -548,61 +548,61 @@ class MyTVisitor implements TVisitor {
         currentFunction.reg_age.put("%rsi", -1);
         sM.killTmp(currentFunction,v);
         result.movq(1, "("+sM.getRegFor(currentFunction, var)+")");
-        result.cmpq(0, "%rax");
-        String False_label = currentFunction.toString() + "_" + currentFunction.tmp++;
-        String end = currentFunction.toString() + "_" + currentFunction.tmp++;
+        result.cmpl(0, "%eax");
+        String True_label = currentFunction.toString() + "_" + currentFunction.tmp++;
+        String cmp_end = currentFunction.toString() + "_" + currentFunction.tmp++;
         if (Compile.debug) {
-          System.out.println("False_label : "+False_label);
-          System.out.println("end : "+end);
+          System.out.println("True_label : "+True_label);
+          System.out.println("end : "+cmp_end);
         }
         switch (e.op) {// ( 0 if equal, -1 if %rdi < %rsi, 1 if %rdi > %rsi )
           case Beq :
-            result.jne(False_label);
-            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
-            result.jmp(end);
-            result.label(False_label);
-            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+            result.je(True_label);
+            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");// false
+            result.jmp(cmp_end);
+            result.label(True_label);
+            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");// true
             break;
           case Bneq :
-            result.je(False_label);
-            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
-            result.jmp(end);
-            result.label(False_label);
-            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+            result.jne(True_label);
+            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");// false
+            result.jmp(cmp_end);
+            result.label(True_label);
+            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");// true
             break;
           case Blt :
-            result.jge(False_label);
-            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
-            result.jmp(end);
-            result.label(False_label);
-            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+            result.jl(True_label);
+            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");// false
+            result.jmp(cmp_end);
+            result.label(True_label);
+            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");// true
             break;
           case Ble :
-            result.jg(False_label);
-            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
-            result.jmp(end);
-            result.label(False_label);
-            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+            result.jle(True_label);
+            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");// false
+            result.jmp(cmp_end);
+            result.label(True_label);
+            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");// true
             break;
           case Bgt :
-            result.jle(False_label);
-            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
-            result.jmp(end);
-            result.label(False_label);
-            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+            result.jg(True_label);
+            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");// false
+            result.jmp(cmp_end);
+            result.label(True_label);
+            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");// true
             break;
           case Bge :
-            result.jl(False_label);
-            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
-            result.jmp(end);
-            result.label(False_label);
-            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+            result.jge(True_label);
+            result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");// false
+            result.jmp(cmp_end);
+            result.label(True_label);
+            result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");// true
             break;
           default :
             System.out.println("Error: unknown comparison operator");
             return;
         }
-        result.label(end);
+        result.label(cmp_end);
         // update memory state
         currentFunction.reg_age.put("%rax", -1);
         return;

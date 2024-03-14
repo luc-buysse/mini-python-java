@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class StackManagement {
   private final X86_64 result;
-  private final static boolean debug = false;
+  private final static boolean debug = Compile.debug;
 
   public StackManagement(X86_64 result) {
     this.result = result;
@@ -18,7 +18,7 @@ public class StackManagement {
     result.subq("$8", "%rsp");
 
     if (debug)
-      System.out.println("creating tmp " + v.name + " in " + currentFunction.name+ "stack position : " + v.str);
+      System.out.println("creating tmp " + v.name + " in " + currentFunction.name+ " stack position : " + v.str);
 
     return v;
   }

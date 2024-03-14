@@ -476,6 +476,8 @@ public class Implement {
     String inf_t = currentFunction.toString() + "_" + currentFunction.tmp++;
     String eq = currentFunction.toString() + "_" + currentFunction.tmp++;
     String sup_t = currentFunction.toString() + "_" + currentFunction.tmp++;
+    if (debug)
+      System.out.println("Beq_Neq : " + Beq_Neq + " \nbool_int_operation : " + bool_int_operation + " \nstring_operation : " + string_operation + " \ninf_t : " + inf_t + " \neq : " + eq + " \nsup_t : " + sup_t);
 
     // jump to the right operation
     result.cmpq(0, "%rax");
@@ -486,22 +488,23 @@ public class Implement {
     // labels for type check
     String Comp_bool_int_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Comp_list_check = currentFunction.toString() + "_" + currentFunction.tmp++;
-
-    // check type of v
+    if (debug)
+      System.out.println("Comp_bool_int_check : " + Comp_bool_int_check + " \nComp_list_check : " + Comp_list_check);
+    // check type of var
     result.cmpq(3, "(%rdi)");
     result.jl(Comp_bool_int_check);
     result.jg(Comp_list_check);
     // check type of v
-    // if v is a string
+    // if var is a string
     result.cmpq(3, "(%rsi)");
     result.jne("_Error_gestion");
     result.jmp(string_operation);
-    // if v is a boolean or an int
+    // if var is a boolean or an int
     result.label(Comp_bool_int_check);
     result.cmpq(2, "(%rsi)");
     result.jg("_Error_gestion");
     result.jmp(bool_int_operation);
-    // if v is a list
+    // if var is a list
     result.label(Comp_list_check);
     result.cmpq(4, "(%rsi)");
     result.jne("_Error_gestion");
@@ -510,29 +513,35 @@ public class Implement {
     // internal labels
     String Comp_list1_empty = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Comp_loop = currentFunction.toString() + "_" + currentFunction.tmp++;
+    if (debug)
+      System.out.println("Comp_list1_empty : " + Comp_list1_empty + " \nComp_loop : " + Comp_loop);
     // use %rax as a counter
     result.xorq("%rax", "%rax");
     // loop
     result.label(Comp_loop);
     result.cmpq("%rax", "8(%rdi)");
-    result.je(Comp_list1_empty); // exit if 1 is empty
+    result.je(Comp_list1_empty); // special case if 1 is empty
     // 1 not empty
     result.cmpq("%rax", "8(%rsi)");
-    result.je(sup_t); // exit if 2 is empty
+    result.je(sup_t); // exit if 2 is empty (1 is longer than 2)
     // 1 and 2 not empty
-    result.movq("16(%rdi,%rax,8)", "%rdi");
+    result.pushq("%rdi");// save the address of the lists
+    result.pushq("%rsi");
+    result.movq("16(%rdi,%rax,8)", "%rdi");// get the elements of the lists to cmp
     result.movq("16(%rsi,%rax,8)", "%rsi");
     // compare the elements
     result.pushq("%rax");
     result.movq(1, "%rax");
     result.call("_my_compare");
     // exit loop if the elements are different
-    result.cmpq(1, "%rax");
-    result.je(inf_t);
+    result.cmpq(0, "%rax");
+    result.jl(inf_t);
     result.jg(sup_t);
     // elements are equal
-    result.popq("%rax");
-    result.incq("%rax");
+    result.popq("%rax");// restore the counter
+    result.incq("%rax");// increment the counter
+    result.popq("%rsi");// restore the address of the lists
+    result.popq("%rdi");
     result.jmp(Comp_loop);
     // loop end
     // 1 is empty
@@ -547,6 +556,8 @@ public class Implement {
     // labels
     String Beq_Neq_bool_int_check = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Beq_Neq_list_check = currentFunction.toString() + "_" + currentFunction.tmp++;
+    if (debug)
+      System.out.println("Beq_Neq_bool_int_check : " + Beq_Neq_bool_int_check + " \nBeq_Neq_list_check : " + Beq_Neq_list_check);
 
     // check type of v
     result.cmpq(3, "(%rdi)");
@@ -567,10 +578,12 @@ public class Implement {
     result.cmpq(4, "(%rsi)");
     result.jne(inf_t);
 
-    // do the operation on list
+    // do the operation on list // TODO recheck the compatibility
     // internal labels
     String Beq_Neq_list1_empty = currentFunction.toString() + "_" + currentFunction.tmp++;
     String Beq_Neq_loop = currentFunction.toString() + "_" + currentFunction.tmp++;
+    if (debug)
+      System.out.println("Beq_Neq_list1_empty : " + Beq_Neq_list1_empty + " \nBeq_Neq_loop : " + Beq_Neq_loop);
     // use %rax as a counter
     result.xorq("%rax", "%rax");
     // loop
@@ -581,19 +594,23 @@ public class Implement {
     result.cmpq("%rax", "8(%rsi)");
     result.je(sup_t); // exit if 2 is empty
     // 1 and 2 not empty
-    result.movq("16(%rdi,%rax,8)", "%rdi");
+    result.pushq("%rdi");// save the address of the lists
+    result.pushq("%rsi");
+    result.movq("16(%rdi,%rax,8)", "%rdi");// get the elements of the lists to cmp
     result.movq("16(%rsi,%rax,8)", "%rsi");
     // compare the elements
     result.pushq("%rax");
     result.movq(0, "%rax");
     result.call("_my_compare");
     // exit loop if the elements are different
-    result.cmpq(1, "%rax");
-    result.je(inf_t);
+    result.cmpq(0, "%rax");
+    result.jl(inf_t);
     result.jg(sup_t);
     // elements are equal
-    result.popq("%rax");
-    result.incq("%rax");
+    result.popq("%rax");// restore the counter
+    result.incq("%rax");// increment the counter
+    result.popq("%rsi");// restore the address of the lists
+    result.popq("%rdi");
     result.jmp(Beq_Neq_loop);
     // loop end
     // 1 is empty
@@ -606,8 +623,8 @@ public class Implement {
     // common operations
     // do the operation on int/bool
     result.label(bool_int_operation);
-    result.movq("8(%rdi)", "%rdi");
-    result.cmpq("%rdi", "8(%rsi)");
+    result.movq("8(%rsi)", "%rsi");
+    result.cmpq("%rsi", "8(%rdi)");
     result.je(eq);
     result.jg(sup_t);
     result.jmp(inf_t);
@@ -645,7 +662,6 @@ public class Implement {
     result.popq("%rbp");
     result.ret();
 
-    // Restore the stack pointer and return
     return;
   }
 }

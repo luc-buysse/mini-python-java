@@ -1,7 +1,9 @@
 TODO:
-5. comp int int create an error : check type checking
 6. list(range(10)) segfault
 8. if Statments : resynchroniser l'etat de la mémoire à la fin
 9. get segfault
+12. len ou or segfault
+13. call segfault
 
+. opti acces memoire : quand on accede à un registre avec choix forcé, evicter un autre registre et faire un mov reg to reg
 var is the return variable
