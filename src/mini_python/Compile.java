@@ -132,11 +132,6 @@ class MyTVisitor implements TVisitor {
       }
     }
 
-    if (Compile.debug) {
-      System.out.println(" ; nb local variables : " + (currentFunction.stack_size-stack_size_buf)+ ")");
-    }
-    stack_size_buf = currentFunction.stack_size;
-
     // space for the calle saved registers
     int n = 1/* %rax */ + ((d.f.params.size()>6)?6:d.f.params.size())/* args reg */;
     for (int j = n; j < this.registers.length; j++) {
@@ -146,8 +141,15 @@ class MyTVisitor implements TVisitor {
       currentFunction.memory.put(registers[j], v);// the reg age is already to 0 meaning is not empty but has never been used by the currentFunction
     }
 
+    if (Compile.debug) {
+      System.out.println(" ; nb local variables including calle saved regs : " + (currentFunction.stack_size-stack_size_buf)+ ")");
+    }
+    stack_size_buf = currentFunction.stack_size;
+
     // update the stack pointer
     result.subq("$"+(currentFunction.stack_size-1)*8, "%rsp");// -1 because the stack_size is the next free space in the stack
+
+    var = null;
 
     // compile the body
     d.body.accept(this);
@@ -640,26 +642,37 @@ class MyTVisitor implements TVisitor {
         // test v
         result.cmpq(0, "8("+sM.getRegFor(currentFunction, var)+")");
         result.je(Band_end);
+        // branching
+        Branching Band_other_branch = sM.startBranching(currentFunction, var, Band_end);
         // test var
         e.e2.accept(this);
         // exit
-        result.label(Band_end);
+        if (Compile.debug) {
+          System.out.println("age before merge : "+ currentFunction.age);
+        }
+        sM.mergeMemories(currentFunction, var, Band_other_branch);// label Band_end is the exit label
+        if (Compile.debug) {
+          System.out.println("age after merge : "+ currentFunction.age);
+        }
+        // get the result in a tmp var
         buf = var;
         var = sM.createAndAllocate(currentFunction, buf);
-        result.cmpq(0, "8("+sM.getRegFor(currentFunction, buf)+")");
+        // labels
         String Band_end_2 = currentFunction.toString() + "_" + currentFunction.tmp++;
         String Band_end_3 = currentFunction.toString() + "_" + currentFunction.tmp++;
         if (Compile.debug) {
           System.out.println("Band_end_2 : "+Band_end_2);
           System.out.println("Band_end_3 : "+Band_end_3);
         }
-        result.jne(Band_end_2);
+        tmp = sM.getRegFor(currentFunction, var);
+        result.cmpq(0, "8("+sM.getRegFor(currentFunction, buf)+")");
+        result.je(Band_end_2);
         // true
-        result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.movq(1, "8("+tmp+")");
         result.jmp(Band_end_3);
         result.label(Band_end_2);
         // false
-        result.movq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.movq(0, "8("+tmp+")");
         result.label(Band_end_3);
         return;
 
@@ -672,10 +685,18 @@ class MyTVisitor implements TVisitor {
         // test v
         result.cmpq(0, "8("+sM.getRegFor(currentFunction, var)+")");
         result.jne(Bor_end);
+        // branching
+        Branching Bor_other_branch = sM.startBranching(currentFunction, var, Bor_end);
         // test var
         e.e2.accept(this);
         // exit
-        result.label(Bor_end);
+        if (Compile.debug) {
+          System.out.println("age before merge : "+ currentFunction.age);
+        }
+        sM.mergeMemories(currentFunction, var, Bor_other_branch);
+        if (Compile.debug) {
+          System.out.println("age after merge : "+ currentFunction.age);
+        }
         buf = var;
         var = sM.createAndAllocate(currentFunction, buf);
         result.movq(1, "("+sM.getRegFor(currentFunction, var)+")");
@@ -686,7 +707,7 @@ class MyTVisitor implements TVisitor {
           System.out.println("Bor_end_2 : "+Bor_end_2);
           System.out.println("Bor_end_3 : "+Bor_end_3);
         }
-        result.jne(Bor_end_2);
+        result.je(Bor_end_2);
         // true
         result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
         result.jmp(Bor_end_3);
@@ -725,7 +746,7 @@ class MyTVisitor implements TVisitor {
     result.movq(4, "(%rax)");// store the type of the list
     result.movq(size, "8(%rax)");// store the length of the list to the allocated memory
     // update memory state
-    Variable list = sM.createTmp(currentFunction);// need createTmp to reserve the memory for the list
+    Variable list = sM.createTmp(currentFunction);
     sM.assign(currentFunction, list, "%rax");
     sM.freeReg(currentFunction, size);
     sM.freeReg(currentFunction, "%rdi");
@@ -747,13 +768,27 @@ class MyTVisitor implements TVisitor {
 
     e.e.accept(this);
 
+    Variable buf;
+    String tmp;
     switch (e.op) {
       case Uneg :
+        buf = var;
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
-        result.negq("8("+sM.getRegFor(currentFunction, var)+")");
+        var = sM.createAndAllocate(currentFunction, buf);
+        if (!var.equals(buf)){// need to fill the new var
+          tmp = sM.getReg(currentFunction);
+          result.movq(2, "("+sM.getRegFor(currentFunction, var)+")");
+          result.movq("8("+sM.getRegFor(currentFunction, buf)+")", tmp);
+          result.negq(tmp);
+          result.movq(tmp, "8("+sM.getRegFor(currentFunction, var)+")");
+        } else {// just need to negate the value
+          result.negq("8("+sM.getRegFor(currentFunction, var)+")");
+        }
         return;
       case Unot :
+        buf = var;
+        var = sM.createAndAllocate(currentFunction, buf);// protect var if it was a persistent variable 
         String Unot_false = currentFunction.toString() + "_" + currentFunction.tmp++;
         String Unot_end = currentFunction.toString() + "_" + currentFunction.tmp++;
         if (Compile.debug) {
@@ -761,7 +796,7 @@ class MyTVisitor implements TVisitor {
           System.out.println("Unot_end : "+Unot_end);
         }
         result.movq(1,"("+sM.getRegFor(currentFunction, var)+")");// transform var in int type
-        result.cmpq(0, "8("+sM.getRegFor(currentFunction, var)+")");
+        result.cmpq(0, "8("+sM.getRegFor(currentFunction, buf)+")");
         result.je(Unot_false);
         result.movq(1, "8("+sM.getRegFor(currentFunction, var)+")");
         result.jmp(Unot_end);
@@ -813,7 +848,7 @@ class MyTVisitor implements TVisitor {
     // free %rax
     sM.freeReg(currentFunction, "%rax");
 
-    // call the function           
+    // call the function
     result.pushq("-8(%rbp)");
     result.call(called_label);
     result.addq("$8", "%rsp");// remove the main %rbp address from the stack
@@ -835,26 +870,27 @@ class MyTVisitor implements TVisitor {
     // get the element e2 of a list e1
     if (Compile.debug)
       System.out.println("compiling "+e.toString()+" : get element " + e.e2.toString() + " of " + e.e1.toString());
-    // rework TODO
+
     // get the list
     e.e1.accept(this);
-    Variable list = var;
-    result.cmpq(4, "("+sM.getRegFor(currentFunction, list)+")");
+    result.cmpq(4, "("+sM.getRegFor(currentFunction, var)+")");
     result.jne("_Error_gestion");
+    Variable list = sM.copyList(currentFunction, var);
+
     // get the index
-    var = sM.createTmp(currentFunction);
     e.e2.accept(this);
-    Variable index = var;
-    result.cmpq(2, "("+sM.getRegFor(currentFunction, index)+")");
+    result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
     result.jne("_Error_gestion");
     // check if the index is in the list
     String tmp = sM.getReg(currentFunction);
-    result.movq("8("+sM.getRegFor(currentFunction, index)+")", tmp);
+    result.movq("8("+sM.getRegFor(currentFunction, var)+")", tmp);
     result.cmpq(tmp, "8("+sM.getRegFor(currentFunction, list)+")");
-    result.jge("_Error_gestion");
+    sM.freeReg(currentFunction, tmp);
+    result.jle("_Error_gestion");
     // put the variable list[index] in var
-    var = sM.createTmp(currentFunction);// create buffer for the expression
-    result.movq("8("+sM.getRegFor(currentFunction, index)+")", tmp);
+    tmp = sM.getReg(currentFunction);
+    result.movq("8("+sM.getRegFor(currentFunction, var)+")", tmp);
+    var = sM.createTmp(currentFunction, var);// protect var(index) if it was a persistent variable
     result.movq("16("+sM.getRegFor(currentFunction, list)+","+tmp+",8)", sM.getRegFor(currentFunction, var));
     sM.freeReg(currentFunction, tmp);
     sM.killTmp(currentFunction,list);
@@ -864,21 +900,40 @@ class MyTVisitor implements TVisitor {
     if (Compile.debug)
       System.out.println("compiling"+s.toString()+" : if of condition " + s.e.toString() + " with (true) " + s.s1.toString() + " and (false) " + s.s2.toString());
     // labels
-    String if_else = currentFunction.toString() + "_" + currentFunction.tmp++;
     String if_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String else_end = currentFunction.toString() + "_" + currentFunction.tmp++;
     if (Compile.debug) {
-      System.out.println("if_else : "+if_else);
       System.out.println("if_end : "+if_end);
+      System.out.println("else_end : "+else_end);
     }
-
+    // compiel the condition
     s.e.accept(this);
-    result.cmpq(0, "8("+sM.getRegFor(currentFunction, var)+")");
-    result.je(if_else);
+    // save the result of the condition
+    Variable cond = sM.copyBoolInt(currentFunction, var);
+    // compile the if statment
+    result.cmpq(0, "8("+sM.getRegFor(currentFunction, cond)+")");
+    result.je(if_end);
+    Branching If_other_branch = sM.startBranching(currentFunction, var, if_end);
     s.s1.accept(this);// regs are modified in memory state but while execution the modification doesn't happen necessarly
-    result.jmp(if_end);
-    result.label(if_else);// TODO : issue with reg allocation
-    s.s2.accept(this);// regs are modified memory state but while execution the modification doesn't happen necessarly
-    result.label(if_end);
+    if (Compile.debug) {
+      System.out.println("age before merge : "+ currentFunction.age);
+    }
+    sM.mergeMemories(currentFunction, var, If_other_branch);
+    if (Compile.debug) {
+      System.out.println("age after merge : "+ currentFunction.age);
+    }
+    // compile the else statment
+    result.cmpq(0, "8("+sM.getRegFor(currentFunction, cond)+")");
+    result.jne(else_end);
+    Branching Else_other_branch = sM.startBranching(currentFunction, var, else_end);
+    s.s2.accept(this);
+    if (Compile.debug) {
+      System.out.println("age before merge : "+ currentFunction.age);
+    }
+    sM.mergeMemories(currentFunction, var, Else_other_branch);
+    if (Compile.debug) {
+      System.out.println("age after merge : "+ currentFunction.age);
+    }
   }
   public void visit(TSreturn s) {
     if (Compile.debug)
@@ -929,7 +984,6 @@ class MyTVisitor implements TVisitor {
     // for x in e do s
     if (Compile.debug)
       System.out.println("compiling "+s.toString()+" : for loop of var "+s.x.name+" iterating on "+ s.e.toString() + " doing "+ s.s.toString());
-    // debug TODO
     // labels
     String TSfor_loop = currentFunction.toString() + "_" + currentFunction.tmp++;
     String TSfor_end = currentFunction.toString() + "_" + currentFunction.tmp++;
@@ -939,20 +993,18 @@ class MyTVisitor implements TVisitor {
     }
     // get the list
     s.e.accept(this);
-    Variable list = var;
-    String tmp = sM.getRegFor(currentFunction, list);
-    result.cmpq(4, "("+tmp+")");
+    result.cmpq(4, "("+sM.getRegFor(currentFunction, var)+")");// check if the variable is a list
     result.jne("_Error_gestion");
-    // free the registers
-    for (int i = 0; i < registers.length; i++) {
-      if (!tmp.equals(registers[i]))
-        sM.freeReg(currentFunction, registers[i]);
-    }
+    // save the list
+    Variable list = sM.copyList(currentFunction, var);
+
     // loop
     result.xorq("%rdi","%rdi");// counter
     result.label(TSfor_loop);
     currentFunction.reg_age.put("%rdi", currentFunction.age++);
     result.cmpq("%rdi", "8("+sM.getRegFor(currentFunction, list)+")");
+    // barnching 
+    Branching TSfor_other_branch = sM.startBranching(currentFunction, list, TSfor_end);
     result.je(TSfor_end);
     // get the element list[i] in x
     result.movq("16("+sM.getRegFor(currentFunction, list)+",%rdi,8)", sM.getRegFor(currentFunction, s.x));
@@ -966,7 +1018,13 @@ class MyTVisitor implements TVisitor {
     result.incq("%rdi");
     // loop end
     result.jmp(TSfor_loop);
-    result.label(TSfor_end);
+    if (Compile.debug) {
+      System.out.println("age before merge : "+ currentFunction.age);
+    }
+    sM.mergeMemories(currentFunction, var, TSfor_other_branch);
+    if (Compile.debug) {
+      System.out.println("age after merge : "+ currentFunction.age);
+    }
     sM.killTmp(currentFunction,list);
 
   }
