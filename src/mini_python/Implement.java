@@ -53,6 +53,10 @@ public class Implement {
     result.pushq("%rbp");
     result.movq("%rsp", "%rbp");
 
+    // check the type of %rdi
+    result.cmpq(4, "(%rdi)");
+    result.jne("_Error_gestion");
+
     // calle save used registers
     result.pushq("%rsi");
     result.movq("8(%rdi)", "%rsi");// get the length of the list
@@ -82,6 +86,10 @@ public class Implement {
 
     // calle save used registers
     result.pushq("%rsi");
+
+    // check type of %rdi
+    result.cmpq(2, "(%rdi)");
+    result.jne("_Error_gestion");
 
     // Generate code for the body of the function
     result.movq("8(%rdi)", "%rsi");// get the length of the list to construct
@@ -672,5 +680,96 @@ public class Implement {
     result.ret();
 
     return;
+  }
+
+  public void copy() {
+    // copy the variable in %rdi and put the result in %rax
+    result.label("_my_copy");
+    result.pushq("%rbp");
+    result.movq("%rsp", "%rbp");
+
+    if (debug)
+      System.out.println("compiling .my_copy in " + currentFunction.name);
+
+    // type labels
+    String copy_bool_int = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String copy_list = currentFunction.toString() + "_" + currentFunction.tmp++;
+    String copy_end = currentFunction.toString() + "_" + currentFunction.tmp++;
+
+    // check type of %rdi
+    result.cmpq(3, "(%rdi)");
+    result.jl(copy_bool_int);
+    result.jg(copy_list);
+
+    // copy string 
+    result.pushq("%r8");
+    result.pushq("%rsi");
+    // get the length of the new string to %rsi
+    result.addq("8(%r8)", "%rsi");// get the length of the string to construct
+    result.leaq("17(,%rsi,1)", "%rdi");// get the length of the memory to allocate 17 = 2*8 + 1
+    result.call("_my_malloc");// allocate memory for the list
+    result.movq(3, "(%rax)");// store the type of the list
+    result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
+    // fill the allocated memory
+    result.leaq("16(%r8)", "%rsi");
+    result.leaq("16(%rax)", "%rdi");
+    result.movq("%rax", "%r8");// save the address of the new var
+    result.call("_my_strcpy");//copy the first string
+    result.movq("%r8", "%rax");// return the address of the new var
+    result.popq("%rsi");
+    result.popq("%r8");
+    result.jmp(copy_end);
+
+    // copy list
+    // labels
+    String Badd_list_loop_1 = currentFunction.toString() + "_" + currentFunction.tmp++;
+
+    String Badd_list_skip_1 = currentFunction.toString() + "_" + currentFunction.tmp++;
+
+    // get the length of the new list to %rsi
+    result.label(copy_list);
+    result.pushq("%r8");
+    result.pushq("%rsi");
+    result.movq("8(%r8)", "%rsi");// get the length of the list to construct
+    result.leaq("16(,%rsi,8)", "%rdi");// get the length of the memory to allocate
+    result.call("_my_malloc");// allocate memory for the list
+    result.movq(4, "(%rax)");// store the type of the list
+    result.movq("%rsi", "8(%rax)");// store the length of the list to the allocated memory
+    // fill the list
+    result.cmpq(0, "8(%r8)");
+    result.je(Badd_list_skip_1);// if len(list_1) <=0, nothing need to be done
+    result.xorq("%rdi", "%rdi");// %rdi = 0
+    result.label(Badd_list_loop_1);
+    result.movq("16(%r8,%rdi,8)", "%rsi");// store the elements of the list_1 to the allocated memory
+    result.movq("%rsi", "16(%rax,%rdi,8)");
+    result.incq("%rdi");// increment the counter
+    result.cmpq("%rdi", "8(%r8)");
+    result.jg(Badd_list_loop_1);
+    result.label(Badd_list_skip_1);
+    result.popq("%rsi");
+    result.popq("%r8");
+    result.jmp(copy_end);
+
+    // copy bool or int or None
+    result.label(copy_bool_int);
+    result.pushq("%rsi");
+    result.movq("%rdi", "%rsi");// buffer the var
+    result.movq("$16", "%rdi");
+    result.call("_my_malloc");
+    result.movq("(%rsi)", "%rdi");
+    result.movq("%rdi", "(%rax)");
+    result.movq("8(%rsi)", "%rdi");
+    result.movq("%rdi", "8(%rax)");
+    result.popq("%rsi");
+    result.jmp(copy_end);
+
+    // exit
+    result.label(copy_end);
+    result.movq("%rbp", "%rsp");
+    result.popq("%rbp");
+    result.ret();
+    
+
+
   }
 }
