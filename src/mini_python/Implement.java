@@ -121,6 +121,7 @@ public class Implement {
 
   public void range() {
     result.label("range");
+    result.movq("%rdi", "%rax");// transparent 1 arg function
     result.ret();// list does everything
   }
 

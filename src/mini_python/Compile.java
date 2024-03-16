@@ -326,12 +326,13 @@ class MyTVisitor implements TVisitor {
         String Badd_end = currentFunction.toString() + "_" + currentFunction.tmp++;
           
         // memory management
-        sM.freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
-        sM.freeReg(currentFunction, "%rsi"); currentFunction.reg_age.put("%rsi", currentFunction.age);
-        sM.freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
+        sM.freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", Integer.MAX_VALUE);
+        sM.freeReg(currentFunction, "%rsi"); currentFunction.reg_age.put("%rsi", Integer.MAX_VALUE);
+        sM.freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
         String in_1 = sM.getRegFor(currentFunction, var);// arg 1
         String in_2 = sM.getRegFor(currentFunction, v);// arg 2
         tmp = sM.getReg(currentFunction);// return value
+        currentFunction.reg_age.put(tmp, Integer.MAX_VALUE);
         // type check
         result.cmpq(2, "("+in_2+")");
         result.je(Badd_int_check);
@@ -443,7 +444,7 @@ class MyTVisitor implements TVisitor {
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
         // free used regs
-        tmp = sM.getReg(currentFunction);
+        tmp = sM.getReg(currentFunction);currentFunction.reg_age.put(tmp, Integer.MAX_VALUE);
         // load the value of var and do the sub
         result.movq("8("+ sM.getRegFor(currentFunction, var) +")", tmp);
         result.subq("8("+ sM.getRegFor(currentFunction, v) +")", tmp);// v,var
@@ -463,8 +464,8 @@ class MyTVisitor implements TVisitor {
         result.cmpq(2, "("+sM.getRegFor(currentFunction, var)+")");
         result.jne("_Error_gestion");
         // load the value of v and var
-        tmp = sM.getReg(currentFunction);
-        tmp2 = sM.getReg(currentFunction);
+        tmp = sM.getReg(currentFunction);currentFunction.reg_age.put(tmp, Integer.MAX_VALUE);
+        tmp2 = sM.getReg(currentFunction);currentFunction.reg_age.put(tmp2, Integer.MAX_VALUE);
         result.movq("8("+ sM.getRegFor(currentFunction, v) +")", tmp2);
         result.movq("8("+sM.getRegFor(currentFunction, var)+")", tmp);
         // do the mult
@@ -491,12 +492,12 @@ class MyTVisitor implements TVisitor {
         // free used regs
         sM.freeReg(currentFunction, "%rax");
         sM.freeReg(currentFunction, "%rdx");
-        currentFunction.reg_age.put("%rdx", currentFunction.age);
-        currentFunction.reg_age.put("%rax", currentFunction.age++);
+        currentFunction.reg_age.put("%rdx", Integer.MAX_VALUE);
+        currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
         // load the value of var in %rax
         result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
         // load the value of v in tmp2
-        tmp2 = sM.getReg(currentFunction);
+        tmp2 = sM.getReg(currentFunction);currentFunction.reg_age.put(tmp2, Integer.MAX_VALUE);
         result.movq("8("+ sM.getRegFor(currentFunction, v) +")", tmp2);
         // do the div and put result in var
         result.cqto();
@@ -521,8 +522,8 @@ class MyTVisitor implements TVisitor {
         // free used regs
         sM.freeReg(currentFunction, "%rax");
         sM.freeReg(currentFunction, "%rdx");
-        currentFunction.reg_age.put("%rdx", currentFunction.age);
-        currentFunction.reg_age.put("%rax", currentFunction.age++);
+        currentFunction.reg_age.put("%rdx", Integer.MAX_VALUE);
+        currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
         // load the value of var in %rax
         result.movq("8("+ sM.getRegFor(currentFunction, var) +")", "%rax");
         // load the value of v in tmp2
@@ -547,9 +548,9 @@ class MyTVisitor implements TVisitor {
         sM.freeReg(currentFunction, "%rdi");
         sM.freeReg(currentFunction, "%rsi");
         sM.freeReg(currentFunction, "%rax");
-        currentFunction.reg_age.put("%rdi", currentFunction.age);
-        currentFunction.reg_age.put("%rsi", currentFunction.age);
-        currentFunction.reg_age.put("%rax", currentFunction.age++);
+        currentFunction.reg_age.put("%rdi", Integer.MAX_VALUE);
+        currentFunction.reg_age.put("%rsi", Integer.MAX_VALUE);
+        currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
         // move var in %rdi // e1
         result.movq(sM.getRegFor(currentFunction, var), "%rdi");
         // move v in %rsi // e2
@@ -568,7 +569,7 @@ class MyTVisitor implements TVisitor {
         // do the comparison
         result.call("_my_compare");
         // put the result in var
-        currentFunction.reg_age.put("%rax", currentFunction.age++);
+        currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
         currentFunction.reg_age.put("%rdi", -1);
         currentFunction.reg_age.put("%rsi", -1);
         sM.killTmp(currentFunction,v);
@@ -724,7 +725,7 @@ class MyTVisitor implements TVisitor {
       System.out.println("compiling "+e.toString()+" : range of "+ e.e.toString());
     e.e.accept(this);
     sM.freeReg(currentFunction, "%rdi");
-    currentFunction.reg_age.put("%rdi", currentFunction.age++);
+    currentFunction.reg_age.put("%rdi", currentFunction.age);
     String in = sM.getRegFor(currentFunction, var);
     result.cmpq(2, "("+in+")");
     result.jne("_Error_gestion");
@@ -736,8 +737,8 @@ class MyTVisitor implements TVisitor {
     if (Compile.debug)
       System.out.println("compiling "+ e.toString()+" : list from "+e.l);
     // créer une liste a partir d'une liste d'expression
-    sM.freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
-    sM.freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
+    sM.freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", Integer.MAX_VALUE);
+    sM.freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
     String size = sM.getReg(currentFunction);
     // get the length of the new list to %rsi
     result.movq(e.l.size(), size);// get the length of the list to construct
@@ -1001,7 +1002,7 @@ class MyTVisitor implements TVisitor {
     // loop
     result.xorq("%rdi","%rdi");// counter
     result.label(TSfor_loop);
-    currentFunction.reg_age.put("%rdi", currentFunction.age++);
+    currentFunction.reg_age.put("%rdi", currentFunction.age);
     result.cmpq("%rdi", "8("+sM.getRegFor(currentFunction, list)+")");
     // barnching 
     Branching TSfor_other_branch = sM.startBranching(currentFunction, list, TSfor_end);
