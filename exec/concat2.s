@@ -11,11 +11,18 @@ main_0:
 	call _my_malloc
 	movq $2, (%rax)
 	movq $3, 8(%rax)
-	movq %rax, %rax
+	subq $8, %rsp
 	movq %rax, -112(%rbp)
+	movq %r14, -96(%rbp)
+	movq -112(%rbp), %r14
+	movq %r14, %rdi
+	call _my_copy
+	movq %rax, %rdi
+	movq %rax, -120(%rbp)
 	pushq -8(%rbp)
 	call make_4
 	addq $8, %rsp
+	movq %r14, -112(%rbp)
 	movq %rsi, -16(%rbp)
 	xorq %rsi, %rsi
 	movq %rax, %rdi
@@ -125,10 +132,15 @@ skip_make_9:
 	movq %rax, %r9
 	movq $2, (%r9)
 	movq %r8, 8(%r9)
-	movq %r9, %rax
+	subq $8, %rsp
+	movq %r9, %rdi
+	call _my_copy
+	movq %rax, %rdi
+	movq %rax, -160(%rbp)
 	pushq -8(%rbp)
 	call make_4
 	addq $8, %rsp
+	movq %r9, -152(%rbp)
 	subq $8, %rsp
 	movq %rsi, -16(%rbp)
 	movq %rax, -152(%rbp)
@@ -138,24 +150,24 @@ skip_make_9:
 	movq $3, (%rax)
 	movq %rsi, 8(%rax)
 	leaq 16(%rax), %rdi
-	movq $make_4_13, %rsi
+	movq $make_4_14, %rsi
 	call _my_strcpy
-	movq %rax, -160(%rbp)
-	movq -160(%rbp), %r8
+	movq %rax, -168(%rbp)
+	movq -168(%rbp), %r8
 	movq -152(%rbp), %r9
 	movq %rcx, -32(%rbp)
 	cmpq $2, (%r9)
-	je make_4_14
-	cmpq $3, (%r9)
 	je make_4_15
-	cmpq $4, (%r9)
+	cmpq $3, (%r9)
 	je make_4_16
-	jmp _Error_gestion
-make_4_14:
-	cmpq $2, (%r8)
+	cmpq $4, (%r9)
 	je make_4_17
 	jmp _Error_gestion
-make_4_17:
+make_4_15:
+	cmpq $2, (%r8)
+	je make_4_18
+	jmp _Error_gestion
+make_4_18:
 	movq 8(%r8), %rcx
 	addq 8(%r9), %rcx
 	movq $16, %rdi
@@ -163,12 +175,12 @@ make_4_17:
 	movq $2, (%rax)
 	movq %rcx, 8(%rax)
 	movq %rax, %rcx
-	jmp make_4_20
-make_4_15:
+	jmp make_4_21
+make_4_16:
 	cmpq $3, (%r8)
-	je make_4_18
+	je make_4_19
 	jmp _Error_gestion
-make_4_18:
+make_4_19:
 	movq 8(%r9), %rsi
 	addq 8(%r8), %rsi
 	leaq 17(,%rsi,1), %rdi
@@ -183,12 +195,12 @@ make_4_18:
 	leaq 16(%r8), %rdi
 	call _my_strcat
 	movq %r8, %rcx
-	jmp make_4_20
-make_4_16:
+	jmp make_4_21
+make_4_17:
 	cmpq $4, (%r8)
-	je make_4_19
+	je make_4_20
 	jmp _Error_gestion
-make_4_19:
+make_4_20:
 	movq 8(%r9), %rsi
 	addq 8(%r8), %rsi
 	leaq 16(,%rsi,8), %rdi
@@ -196,31 +208,31 @@ make_4_19:
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
 	cmpq $0, 8(%r8)
-	je make_4_23
+	je make_4_24
 	xorq %rdi, %rdi
-make_4_21:
+make_4_22:
 	movq 16(%r8,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
 	cmpq %rdi, 8(%r8)
-	jg make_4_21
-make_4_23:
+	jg make_4_22
+make_4_24:
 	cmpq $0, 8(%r9)
-	je make_4_24
+	je make_4_25
 	movq %rdi, %r8
 	xorq %rdi, %rdi
-make_4_22:
+make_4_23:
 	movq 16(%r9,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%r8,8)
 	incq %rdi
 	incq %r8
 	cmpq %rdi, 8(%r9)
-	jg make_4_22
-make_4_24:
+	jg make_4_23
+make_4_25:
 	movq %rax, %rcx
-	jmp make_4_20
-make_4_20:
-	movq %r8, -160(%rbp)
+	jmp make_4_21
+make_4_21:
+	movq %r8, -168(%rbp)
 	movq %rcx, %rax
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
@@ -231,16 +243,16 @@ make_4_20:
 	movq %rbp, %rsp
 	popq %rbp
 	ret
-	jmp skip_make_25
+	jmp skip_make_26
 make_4_1:
-	subq $24, %rsp
-	movq -160(%rbp), %rdi
+	subq $32, %rsp
+	movq -168(%rbp), %rdi
 	movq %rax, %rdi
 	movq %rdi, -136(%rbp)
 	movq %rax, %rdi
-	movq %rax, -160(%rbp)
-skip_make_25:
-	movq %rdi, -160(%rbp)
+	movq %rax, -168(%rbp)
+skip_make_26:
+	movq %rdi, -168(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $0, (%rax)
@@ -616,6 +628,63 @@ _implement_context_7_16:
 	movq %rbp, %rsp
 	popq %rbp
 	ret
+_my_copy:
+	pushq %rbp
+	movq %rsp, %rbp
+	cmpq $3, (%rdi)
+	jl _implement_context_7_26
+	jg _implement_context_7_27
+	pushq %r8
+	pushq %rsi
+	addq 8(%r8), %rsi
+	leaq 17(,%rsi,1), %rdi
+	call _my_malloc
+	movq $3, (%rax)
+	movq %rsi, 8(%rax)
+	leaq 16(%r8), %rsi
+	leaq 16(%rax), %rdi
+	movq %rax, %r8
+	call _my_strcpy
+	movq %r8, %rax
+	popq %rsi
+	popq %r8
+	jmp _implement_context_7_28
+_implement_context_7_27:
+	pushq %r8
+	pushq %rsi
+	movq 8(%r8), %rsi
+	leaq 16(,%rsi,8), %rdi
+	call _my_malloc
+	movq $4, (%rax)
+	movq %rsi, 8(%rax)
+	cmpq $0, 8(%r8)
+	je _implement_context_7_30
+	xorq %rdi, %rdi
+_implement_context_7_29:
+	movq 16(%r8,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%rdi,8)
+	incq %rdi
+	cmpq %rdi, 8(%r8)
+	jg _implement_context_7_29
+_implement_context_7_30:
+	popq %rsi
+	popq %r8
+	jmp _implement_context_7_28
+_implement_context_7_26:
+	pushq %rsi
+	movq %rdi, %rsi
+	movq $16, %rdi
+	call _my_malloc
+	movq (%rsi), %rdi
+	movq %rdi, (%rax)
+	movq 8(%rsi), %rdi
+	movq %rdi, 8(%rax)
+	popq %rsi
+	jmp _implement_context_7_28
+_implement_context_7_28:
+	movq %rbp, %rsp
+	popq %rbp
+	ret
 _Error_gestion:
 	xorq %rax, %rax
 	movq $_Error_message, %rdi
@@ -629,7 +698,7 @@ _Error_gestion:
 	.data
 make_4_8:
 	.string ""
-make_4_13:
+make_4_14:
 	.string "a"
 _True:
 	.string "True"

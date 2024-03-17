@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class StackManagement {
   private final X86_64 result;
-  private final static boolean debug = Compile.debug;
+  private final static boolean debug = false;
 
   public StackManagement(X86_64 result) {
     this.result = result;
@@ -46,13 +46,27 @@ public class StackManagement {
     return var;
   }
 
+  public Variable copy(Function currentFunction, Variable var) {
+    // create a new variable and copy the content of the old one
+    Variable copy = createTmp(currentFunction);
+    freeReg(currentFunction, "%rdi");currentFunction.reg_age.put("%rdi", Integer.MAX_VALUE);
+    freeReg(currentFunction, "%rax");currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
+    
+    result.movq(getRegFor(currentFunction, var), "%rdi");
+    result.call("_my_copy");
+
+    freeReg(currentFunction, "%rdi");
+    assign(currentFunction, copy, "%rax");
+    return copy;
+  }
+
   public Variable copyList(Function currentFunction, Variable list) {
     // create a new list and copy the content of the old one
     Variable copy = createTmp(currentFunction);
     // prep memory
-    freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", currentFunction.age);
-    freeReg(currentFunction, "%rsi"); currentFunction.reg_age.put("%rsi", currentFunction.age);
-    freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", currentFunction.age++);
+    freeReg(currentFunction, "%rdi"); currentFunction.reg_age.put("%rdi", Integer.MAX_VALUE);
+    freeReg(currentFunction, "%rsi"); currentFunction.reg_age.put("%rsi", Integer.MAX_VALUE);
+    freeReg(currentFunction, "%rax"); currentFunction.reg_age.put("%rax", Integer.MAX_VALUE);
 
     // get the length of the new list to %rsi
     result.movq("8("+getRegFor(currentFunction, list)+")", "%rsi");// get the length of the list to construct

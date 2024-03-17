@@ -42,25 +42,31 @@ main_0_3:
 	movq $2, (%rax)
 	movq $1, 8(%rax)
 	movq %r14, -120(%rbp)
-	movq %rax, %rax
+	subq $8, %rsp
 	movq %rax, -120(%rbp)
+	movq -120(%rbp), %r14
+	movq %r14, %rdi
+	call _my_copy
+	movq %rax, %rdi
+	movq %rax, -128(%rbp)
 	pushq -8(%rbp)
 	call len
 	addq $8, %rsp
-	jmp skip_main_5
+	movq %r14, -120(%rbp)
+	jmp skip_main_6
 main_0_4:
-	subq $0, %rsp
+	subq $8, %rsp
 	movq %r14, %rax
 	movq %r14, -120(%rbp)
-skip_main_5:
+skip_main_6:
 	movq $1, (%rax)
 	cmpq $0, 8(%rax)
-	je main_0_6
+	je main_0_7
 	movq $1, 8(%rax)
-	jmp main_0_7
-main_0_6:
-	movq $0, 8(%rax)
+	jmp main_0_8
 main_0_7:
+	movq $0, 8(%rax)
+main_0_8:
 	xorq %rsi, %rsi
 	movq %rax, %rdi
 	call print
@@ -429,6 +435,63 @@ _implement_context_5_14:
 	ret
 _implement_context_5_16:
 	movq $1, %rax
+	movq %rbp, %rsp
+	popq %rbp
+	ret
+_my_copy:
+	pushq %rbp
+	movq %rsp, %rbp
+	cmpq $3, (%rdi)
+	jl _implement_context_5_26
+	jg _implement_context_5_27
+	pushq %r8
+	pushq %rsi
+	addq 8(%r8), %rsi
+	leaq 17(,%rsi,1), %rdi
+	call _my_malloc
+	movq $3, (%rax)
+	movq %rsi, 8(%rax)
+	leaq 16(%r8), %rsi
+	leaq 16(%rax), %rdi
+	movq %rax, %r8
+	call _my_strcpy
+	movq %r8, %rax
+	popq %rsi
+	popq %r8
+	jmp _implement_context_5_28
+_implement_context_5_27:
+	pushq %r8
+	pushq %rsi
+	movq 8(%r8), %rsi
+	leaq 16(,%rsi,8), %rdi
+	call _my_malloc
+	movq $4, (%rax)
+	movq %rsi, 8(%rax)
+	cmpq $0, 8(%r8)
+	je _implement_context_5_30
+	xorq %rdi, %rdi
+_implement_context_5_29:
+	movq 16(%r8,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%rdi,8)
+	incq %rdi
+	cmpq %rdi, 8(%r8)
+	jg _implement_context_5_29
+_implement_context_5_30:
+	popq %rsi
+	popq %r8
+	jmp _implement_context_5_28
+_implement_context_5_26:
+	pushq %rsi
+	movq %rdi, %rsi
+	movq $16, %rdi
+	call _my_malloc
+	movq (%rsi), %rdi
+	movq %rdi, (%rax)
+	movq 8(%rsi), %rdi
+	movq %rdi, 8(%rax)
+	popq %rsi
+	jmp _implement_context_5_28
+_implement_context_5_28:
 	movq %rbp, %rsp
 	popq %rbp
 	ret

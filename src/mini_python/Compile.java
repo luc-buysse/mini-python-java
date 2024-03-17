@@ -73,6 +73,7 @@ class MyTVisitor implements TVisitor {
     implement.strcat();
     implement.strcmp();
     implement.compare();
+    implement.copy();
 
     // error gestion code
     implement.errorGestion();
@@ -827,8 +828,13 @@ class MyTVisitor implements TVisitor {
     int i = 0;
     for (TExpr arg : e.l) {
       arg.accept(this);
-      var = sM.createTmp(currentFunction,var);
-      args[i++] = var;
+      if (Compile.debug) {
+        System.out.print("arg "+i+" : "+var.name);
+      }
+      args[i++] = sM.copy(currentFunction, var);
+      if (Compile.debug) {
+        System.out.println(" copied to : "+args[i-1].name);
+      }
     }
     // put args in the stack
     HashSet<Variable> args_emplacement = new HashSet<Variable>();
@@ -837,14 +843,21 @@ class MyTVisitor implements TVisitor {
         var = sM.createTmp(currentFunction,var); // reserve the new stack emplacement
         args_emplacement.add(var); // save the emplacement to later free the memory
         result.movq(sM.getRegFor(currentFunction, args[cpt]), var.str); // put the value in the right emplacement
-        
+        if (Compile.debug) {
+          System.out.println("putting "+args[cpt].name+" in "+var.name+ "stack emplacement : "+ var.str);
+        }
       }
     }
     // put the rest in the right registers
     for (int cpt = 0; cpt < ((nb_args<6)?nb_args:6); cpt++) {
-      if (sM.getRegFor(currentFunction, args[cpt]) != registers[cpt])
-        sM.freeReg(currentFunction, registers[cpt]);
-      result.movq(sM.getRegFor(currentFunction, args[cpt]), registers[cpt]);
+      if (sM.getRegFor(currentFunction, args[cpt]) != registers[cpt+1])
+        sM.freeReg(currentFunction, registers[cpt+1]);
+      result.movq(sM.getRegFor(currentFunction, args[cpt]), registers[cpt+1]);
+      sM.assign(currentFunction, args[cpt], registers[cpt+1]);
+      currentFunction.reg_age.put(registers[cpt+1], Integer.MAX_VALUE);
+      if (Compile.debug) {
+        System.out.println("putting "+args[cpt].name+" in "+registers[cpt+1]);
+      }
     }
     // free %rax
     sM.freeReg(currentFunction, "%rax");
@@ -857,15 +870,19 @@ class MyTVisitor implements TVisitor {
     for (Variable emplacement : args_emplacement) {
       sM.killTmp(currentFunction,emplacement);
     }
+    
     // update memory state
     for (i = 0; i < nb_args; i++) {
       sM.killTmp(currentFunction,args[i]);
     }
     for (int cpt = 0; cpt < ((nb_args<6)?nb_args:6); cpt++) {
-      currentFunction.reg_age.put(registers[cpt], -1);
+      currentFunction.reg_age.put(registers[cpt+1], -1);
     }
     var = sM.createTmp(currentFunction,var);
     sM.assign(currentFunction, var, "%rax");
+    if (Compile.debug) {
+      System.out.println("result of the call to "+ e.f.name+" in "+var.name);
+    }
   }
   public void visit(TEget e) {
     // get the element e2 of a list e1

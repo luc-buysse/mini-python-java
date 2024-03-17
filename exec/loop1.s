@@ -11,11 +11,18 @@ main_0:
 	call _my_malloc
 	movq $2, (%rax)
 	movq $0, 8(%rax)
-	movq %rax, %rax
+	subq $8, %rsp
 	movq %rax, -112(%rbp)
+	movq %r14, -96(%rbp)
+	movq -112(%rbp), %r14
+	movq %r14, %rdi
+	call _my_copy
+	movq %rax, %rdi
+	movq %rax, -120(%rbp)
 	pushq -8(%rbp)
 	call loop_4
 	addq $8, %rsp
+	movq %r14, -112(%rbp)
 	andq $-16, %rsp
 	xorq %rdi, %rdi
 	call fflush
@@ -156,26 +163,31 @@ loop_4_19:
 	jmp loop_4_15
 loop_4_15:
 	subq $8, %rsp
-	movq %r8, %rax
+	subq $8, %rsp
+	movq %r8, %rdi
+	call _my_copy
+	movq %rax, %rdi
+	movq %rax, -160(%rbp)
 	pushq -8(%rbp)
 	call loop_4
 	addq $8, %rsp
-	jmp skip_loop_21
+	movq %r8, -152(%rbp)
+	jmp skip_loop_22
 loop_4_0:
-	subq $16, %rsp
+	subq $24, %rsp
 	movq %r15, %rax
 	movq %rax, -136(%rbp)
 	movq %r15, %rax
 	movq %r15, -152(%rbp)
 	movq %r8, -40(%rbp)
-skip_loop_21:
+skip_loop_22:
 	movq -136(%rbp), %rdi
 	cmpq $0, 8(%rdi)
 	jne loop_4_1
-	jmp skip_loop_22
+	jmp skip_loop_23
 loop_4_1:
 	subq $0, %rsp
-skip_loop_22:
+skip_loop_23:
 	movq %rax, -152(%rbp)
 	movq %rdi, -136(%rbp)
 	movq $16, %rdi
@@ -548,6 +560,63 @@ _implement_context_7_14:
 	ret
 _implement_context_7_16:
 	movq $1, %rax
+	movq %rbp, %rsp
+	popq %rbp
+	ret
+_my_copy:
+	pushq %rbp
+	movq %rsp, %rbp
+	cmpq $3, (%rdi)
+	jl _implement_context_7_26
+	jg _implement_context_7_27
+	pushq %r8
+	pushq %rsi
+	addq 8(%r8), %rsi
+	leaq 17(,%rsi,1), %rdi
+	call _my_malloc
+	movq $3, (%rax)
+	movq %rsi, 8(%rax)
+	leaq 16(%r8), %rsi
+	leaq 16(%rax), %rdi
+	movq %rax, %r8
+	call _my_strcpy
+	movq %r8, %rax
+	popq %rsi
+	popq %r8
+	jmp _implement_context_7_28
+_implement_context_7_27:
+	pushq %r8
+	pushq %rsi
+	movq 8(%r8), %rsi
+	leaq 16(,%rsi,8), %rdi
+	call _my_malloc
+	movq $4, (%rax)
+	movq %rsi, 8(%rax)
+	cmpq $0, 8(%r8)
+	je _implement_context_7_30
+	xorq %rdi, %rdi
+_implement_context_7_29:
+	movq 16(%r8,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%rdi,8)
+	incq %rdi
+	cmpq %rdi, 8(%r8)
+	jg _implement_context_7_29
+_implement_context_7_30:
+	popq %rsi
+	popq %r8
+	jmp _implement_context_7_28
+_implement_context_7_26:
+	pushq %rsi
+	movq %rdi, %rsi
+	movq $16, %rdi
+	call _my_malloc
+	movq (%rsi), %rdi
+	movq %rdi, (%rax)
+	movq 8(%rsi), %rdi
+	movq %rdi, 8(%rax)
+	popq %rsi
+	jmp _implement_context_7_28
+_implement_context_7_28:
 	movq %rbp, %rsp
 	popq %rbp
 	ret

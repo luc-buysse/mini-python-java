@@ -11,22 +11,34 @@ main_0:
 	call _my_malloc
 	movq $2, (%rax)
 	movq $7, 8(%rax)
-	movq %rax, %rax
+	subq $8, %rsp
 	movq %rax, -128(%rbp)
+	movq %r14, -112(%rbp)
+	movq -128(%rbp), %r14
+	movq %r14, %rdi
+	call _my_copy
+	movq %rax, %rdi
+	movq %rax, -136(%rbp)
 	pushq -8(%rbp)
 	call range
 	addq $8, %rsp
-	movq %rax, %rax
+	movq %r14, -128(%rbp)
+	subq $8, %rsp
 	movq %rax, -128(%rbp)
+	movq -128(%rbp), %r14
+	movq %r14, %rdi
+	call _my_copy
+	movq %rax, %rdi
+	movq %rax, -144(%rbp)
 	pushq -8(%rbp)
 	call list
 	addq $8, %rsp
+	movq %r14, -128(%rbp)
 	cmpq $4, (%rax)
 	jne _Error_gestion
 	subq $8, %rsp
 	movq %rsi, -32(%rbp)
 	movq %rax, -16(%rbp)
-	movq %r14, -112(%rbp)
 	movq -16(%rbp), %r14
 	movq 8(%r14), %rsi
 	leaq 16(,%rsi,8), %rdi
@@ -35,19 +47,19 @@ main_0:
 	movq %rsi, 8(%rax)
 	xorq %rdi, %rdi
 	cmpq %rdi, 8(%r14)
-	je main_0_5
-main_0_4:
+	je main_0_7
+main_0_6:
 	movq 16(%r14,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
 	cmpq %rdi, 8(%r14)
-	je main_0_5
-	jmp main_0_4
-main_0_5:
+	je main_0_7
+	jmp main_0_6
+main_0_7:
 	xorq %rdi, %rdi
-main_0_1:
+main_0_3:
 	cmpq %rdi, 8(%rax)
-	je main_0_2
+	je main_0_4
 	movq -8(%rbp), %rsi
 	movq 16(%rax,%rdi,8), %rsi
 	pushq %rdi
@@ -58,26 +70,26 @@ main_0_1:
 	movq %rdi, -8(%rbp)
 	popq %rdi
 	incq %rdi
-	jmp main_0_1
+	jmp main_0_3
 	subq $8, %rsp
-	movq %rax, -136(%rbp)
+	movq %rax, -152(%rbp)
 	movq $16, %rdi
 	call _my_malloc
-	movq -144(%rbp), %rsi
+	movq -160(%rbp), %rsi
 	movq %rax, %rsi
 	movq -8(%rbp), %rax
 	movq (%rax), %rdi
 	movq %rdi, (%rsi)
 	movq 8(%rax), %rdi
 	movq %rdi, 8(%rsi)
-	jmp skip_main_6
-main_0_2:
+	jmp skip_main_8
+main_0_4:
 	subq $8, %rsp
 	movq %rax, %rsi
 	movq %rax, %rsi
-	movq %rax, -144(%rbp)
+	movq %rax, -160(%rbp)
 	movq -8(%rbp), %rax
-skip_main_6:
+skip_main_8:
 	andq $-16, %rsp
 	xorq %rdi, %rdi
 	call fflush
@@ -443,6 +455,63 @@ _implement_context_5_14:
 	ret
 _implement_context_5_16:
 	movq $1, %rax
+	movq %rbp, %rsp
+	popq %rbp
+	ret
+_my_copy:
+	pushq %rbp
+	movq %rsp, %rbp
+	cmpq $3, (%rdi)
+	jl _implement_context_5_26
+	jg _implement_context_5_27
+	pushq %r8
+	pushq %rsi
+	addq 8(%r8), %rsi
+	leaq 17(,%rsi,1), %rdi
+	call _my_malloc
+	movq $3, (%rax)
+	movq %rsi, 8(%rax)
+	leaq 16(%r8), %rsi
+	leaq 16(%rax), %rdi
+	movq %rax, %r8
+	call _my_strcpy
+	movq %r8, %rax
+	popq %rsi
+	popq %r8
+	jmp _implement_context_5_28
+_implement_context_5_27:
+	pushq %r8
+	pushq %rsi
+	movq 8(%r8), %rsi
+	leaq 16(,%rsi,8), %rdi
+	call _my_malloc
+	movq $4, (%rax)
+	movq %rsi, 8(%rax)
+	cmpq $0, 8(%r8)
+	je _implement_context_5_30
+	xorq %rdi, %rdi
+_implement_context_5_29:
+	movq 16(%r8,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%rdi,8)
+	incq %rdi
+	cmpq %rdi, 8(%r8)
+	jg _implement_context_5_29
+_implement_context_5_30:
+	popq %rsi
+	popq %r8
+	jmp _implement_context_5_28
+_implement_context_5_26:
+	pushq %rsi
+	movq %rdi, %rsi
+	movq $16, %rdi
+	call _my_malloc
+	movq (%rsi), %rdi
+	movq %rdi, (%rax)
+	movq 8(%rsi), %rdi
+	movq %rdi, 8(%rax)
+	popq %rsi
+	jmp _implement_context_5_28
+_implement_context_5_28:
 	movq %rbp, %rsp
 	popq %rbp
 	ret
