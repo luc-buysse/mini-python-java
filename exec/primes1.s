@@ -143,7 +143,6 @@ skip_prefix_12:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r14, -24(%rbp)
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
 	movq -56(%rbp), %r8
@@ -528,7 +527,6 @@ skip_range2_49:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r14, -24(%rbp)
 	movq -120(%rbp), %r14
 	movq -128(%rbp), %r15
 	movq -96(%rbp), %rbx

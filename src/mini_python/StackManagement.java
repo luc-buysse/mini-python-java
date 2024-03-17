@@ -252,6 +252,8 @@ public class StackManagement {
           System.out.println("restoring " + v.name);
         }
         result.movq(v.str, v.name);
+        currentFunction.memory.put(v.name, v);
+        currentFunction.reg_age.put(v.name, currentFunction.age++);
       }
     }
     // TODO : free the allocated memory for the local variables

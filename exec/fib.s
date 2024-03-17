@@ -170,6 +170,7 @@ fibaux_4_0:
 	subq $8, %rsp
 	movq %r14, %rsi
 	movq %r14, -144(%rbp)
+	movq -96(%rbp), %r14
 	movq -144(%rbp), %rsi
 	movq %rax, -136(%rbp)
 	movq -8(%rbp), %rax
@@ -306,11 +307,7 @@ fibaux_4_18:
 fibaux_4_1:
 	subq $40, %rsp
 	movq %rax, %rax
-	movq %r15, -104(%rbp)
-	movq %r8, -40(%rbp)
-	movq -16(%rbp), %r8
 	movq %rdi, -136(%rbp)
-	movq %r9, -48(%rbp)
 	movq %rsi, -144(%rbp)
 skip_fibaux_26:
 	movq %rax, -184(%rbp)

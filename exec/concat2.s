@@ -89,9 +89,13 @@ make_4_6:
 	jmp skip_make_9
 make_4_0:
 	subq $0, %rsp
-	movq %rax, -136(%rbp)
-	movq %r15, %rax
+	movq %r14, -8(%rbp)
+	movq -96(%rbp), %r14
 	movq %r15, -128(%rbp)
+	movq -104(%rbp), %r15
+	movq -16(%rbp), %rsi
+	movq %rax, -136(%rbp)
+	movq -128(%rbp), %rax
 skip_make_9:
 	movq -136(%rbp), %rdi
 	cmpq $0, 8(%rdi)
@@ -105,23 +109,28 @@ skip_make_9:
 	subq $8, %rsp
 	cmpq $2, (%rax)
 	jne _Error_gestion
-	cmpq $2, (%r14)
+	movq -8(%rbp), %rdi
+	cmpq $2, (%rdi)
 	jne _Error_gestion
-	movq 8(%r14), %rdi
-	subq 8(%rax), %rdi
+	movq %r8, -40(%rbp)
+	movq 8(%rdi), %r8
+	subq 8(%rax), %r8
 	subq $8, %rsp
+	movq %rdi, -8(%rbp)
 	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
-	movq -152(%rbp), %r15
-	movq %rax, %r15
-	movq $2, (%r15)
-	movq %rdi, 8(%r15)
-	movq %r15, %rax
+	movq %r9, -48(%rbp)
+	movq -152(%rbp), %r9
+	movq %rax, %r9
+	movq $2, (%r9)
+	movq %r8, 8(%r9)
+	movq %r9, %rax
 	pushq -8(%rbp)
 	call make_4
 	addq $8, %rsp
 	subq $8, %rsp
+	movq %rsi, -16(%rbp)
 	movq %rax, -152(%rbp)
 	movq $1, %rsi
 	leaq 17(,%rsi,1), %rdi
@@ -132,92 +141,92 @@ skip_make_9:
 	movq $make_4_13, %rsi
 	call _my_strcpy
 	movq %rax, -160(%rbp)
-	movq -160(%rbp), %r15
-	movq %r8, -40(%rbp)
-	movq -152(%rbp), %r8
-	movq %r9, -48(%rbp)
-	cmpq $2, (%r8)
+	movq -160(%rbp), %r8
+	movq -152(%rbp), %r9
+	movq %rcx, -32(%rbp)
+	cmpq $2, (%r9)
 	je make_4_14
-	cmpq $3, (%r8)
+	cmpq $3, (%r9)
 	je make_4_15
-	cmpq $4, (%r8)
+	cmpq $4, (%r9)
 	je make_4_16
 	jmp _Error_gestion
 make_4_14:
-	cmpq $2, (%r15)
+	cmpq $2, (%r8)
 	je make_4_17
 	jmp _Error_gestion
 make_4_17:
-	movq 8(%r15), %r9
-	addq 8(%r8), %r9
+	movq 8(%r8), %rcx
+	addq 8(%r9), %rcx
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
-	movq %r9, 8(%rax)
-	movq %rax, %r9
+	movq %rcx, 8(%rax)
+	movq %rax, %rcx
 	jmp make_4_20
 make_4_15:
-	cmpq $3, (%r15)
+	cmpq $3, (%r8)
 	je make_4_18
 	jmp _Error_gestion
 make_4_18:
-	movq 8(%r8), %rsi
-	addq 8(%r15), %rsi
+	movq 8(%r9), %rsi
+	addq 8(%r8), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
 	movq $3, (%rax)
 	movq %rsi, 8(%rax)
-	leaq 16(%r15), %rsi
-	leaq 16(%rax), %rdi
-	movq %rax, %r15
-	call _my_strcpy
 	leaq 16(%r8), %rsi
-	leaq 16(%r15), %rdi
+	leaq 16(%rax), %rdi
+	movq %rax, %r8
+	call _my_strcpy
+	leaq 16(%r9), %rsi
+	leaq 16(%r8), %rdi
 	call _my_strcat
-	movq %r15, %r9
+	movq %r8, %rcx
 	jmp make_4_20
 make_4_16:
-	cmpq $4, (%r15)
+	cmpq $4, (%r8)
 	je make_4_19
 	jmp _Error_gestion
 make_4_19:
-	movq 8(%r8), %rsi
-	addq 8(%r15), %rsi
+	movq 8(%r9), %rsi
+	addq 8(%r8), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
-	cmpq $0, 8(%r15)
+	cmpq $0, 8(%r8)
 	je make_4_23
 	xorq %rdi, %rdi
 make_4_21:
-	movq 16(%r15,%rdi,8), %rsi
+	movq 16(%r8,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r15)
+	cmpq %rdi, 8(%r8)
 	jg make_4_21
 make_4_23:
-	cmpq $0, 8(%r8)
+	cmpq $0, 8(%r9)
 	je make_4_24
-	movq %rdi, %r15
+	movq %rdi, %r8
 	xorq %rdi, %rdi
 make_4_22:
-	movq 16(%r8,%rdi,8), %rsi
-	movq %rsi, 16(%rax,%r15,8)
+	movq 16(%r9,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%r8,8)
 	incq %rdi
-	incq %r15
-	cmpq %rdi, 8(%r8)
+	incq %r8
+	cmpq %rdi, 8(%r9)
 	jg make_4_22
 make_4_24:
-	movq %rax, %r9
+	movq %rax, %rcx
 	jmp make_4_20
 make_4_20:
-	movq %r15, -160(%rbp)
-	movq %r9, %rax
+	movq %r8, -160(%rbp)
+	movq %rcx, %rax
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -40(%rbp), %r8
 	movq -48(%rbp), %r9
+	movq -32(%rbp), %rcx
 	movq -16(%rbp), %rsi
 	movq %rbp, %rsp
 	popq %rbp
@@ -225,22 +234,22 @@ make_4_20:
 	jmp skip_make_25
 make_4_1:
 	subq $24, %rsp
-	movq %rax, %r9
-	movq %r9, -48(%rbp)
-	movq %rax, %r9
-	movq %rax, -160(%rbp)
+	movq -160(%rbp), %rdi
+	movq %rax, %rdi
 	movq %rdi, -136(%rbp)
-	movq %r8, -40(%rbp)
+	movq %rax, %rdi
+	movq %rax, -160(%rbp)
 skip_make_25:
+	movq %rdi, -160(%rbp)
 	movq $16, %rdi
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r9, -160(%rbp)
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -40(%rbp), %r8
 	movq -48(%rbp), %r9
+	movq -32(%rbp), %rcx
 	movq -16(%rbp), %rsi
 	movq %rbp, %rsp
 	popq %rbp

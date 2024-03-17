@@ -98,9 +98,13 @@ fact_4_6:
 	jmp skip_fact_8
 fact_4_0:
 	subq $0, %rsp
-	movq %rax, -136(%rbp)
-	movq %r15, %rax
+	movq %r14, -8(%rbp)
+	movq -96(%rbp), %r14
 	movq %r15, -128(%rbp)
+	movq -104(%rbp), %r15
+	movq -16(%rbp), %rsi
+	movq %rax, -136(%rbp)
+	movq -128(%rbp), %rax
 skip_fact_8:
 	movq -136(%rbp), %rdi
 	cmpq $0, 8(%rdi)
@@ -118,41 +122,51 @@ skip_fact_9:
 	subq $8, %rsp
 	cmpq $2, (%rax)
 	jne _Error_gestion
-	cmpq $2, (%r14)
+	movq -8(%rbp), %rdi
+	cmpq $2, (%rdi)
 	jne _Error_gestion
-	movq 8(%r14), %rdi
-	subq 8(%rax), %rdi
+	movq %r8, -40(%rbp)
+	movq 8(%rdi), %r8
+	subq 8(%rax), %r8
 	subq $8, %rsp
+	movq %rdi, -8(%rbp)
 	movq %rax, -128(%rbp)
 	movq $16, %rdi
 	call _my_malloc
-	movq -152(%rbp), %r15
-	movq %rax, %r15
-	movq $2, (%r15)
-	movq %rdi, 8(%r15)
-	movq %r15, %rax
+	movq %r9, -48(%rbp)
+	movq -152(%rbp), %r9
+	movq %rax, %r9
+	movq $2, (%r9)
+	movq %r8, 8(%r9)
+	movq %r9, %rax
 	pushq -8(%rbp)
 	call fact_4
 	addq $8, %rsp
 	subq $8, %rsp
 	cmpq $2, (%rax)
 	jne _Error_gestion
-	cmpq $2, (%r14)
+	movq -8(%rbp), %rdi
+	cmpq $2, (%rdi)
 	jne _Error_gestion
-	movq 8(%rax), %r15
-	movq 8(%r14), %rdi
-	imulq %rdi, %r15
+	movq 8(%rax), %r9
+	movq 8(%rdi), %r8
+	imulq %r8, %r9
 	subq $8, %rsp
+	movq %rdi, -8(%rbp)
 	movq %rax, -152(%rbp)
 	movq $16, %rdi
 	call _my_malloc
-	movq -168(%rbp), %rsi
-	movq %rax, %rsi
-	movq $2, (%rsi)
-	movq %r15, 8(%rsi)
-	movq %rsi, %rax
+	movq %rcx, -32(%rbp)
+	movq -168(%rbp), %rcx
+	movq %rax, %rcx
+	movq $2, (%rcx)
+	movq %r9, 8(%rcx)
+	movq %rcx, %rax
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
+	movq -40(%rbp), %r8
+	movq -48(%rbp), %r9
+	movq -32(%rbp), %rcx
 	movq -16(%rbp), %rsi
 	movq %rbp, %rsp
 	popq %rbp
@@ -161,9 +175,11 @@ skip_fact_9:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %rsi, -168(%rbp)
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
+	movq -40(%rbp), %r8
+	movq -48(%rbp), %r9
+	movq -32(%rbp), %rcx
 	movq -16(%rbp), %rsi
 	movq %rbp, %rsp
 	popq %rbp
@@ -359,7 +375,6 @@ skip_factimp_22:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r9, -16(%rbp)
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
 	movq -56(%rbp), %r8

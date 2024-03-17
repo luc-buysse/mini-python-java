@@ -115,7 +115,6 @@ add_4_7:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r8, -120(%rbp)
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -40(%rbp), %r8
@@ -151,7 +150,6 @@ sub_5:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r14, -120(%rbp)
 	movq -96(%rbp), %r14
 	movq %rbp, %rsp
 	popq %rbp
@@ -311,7 +309,6 @@ mul_6_11:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r8, -160(%rbp)
 	movq -104(%rbp), %r14
 	movq -112(%rbp), %r15
 	movq -48(%rbp), %r8
@@ -477,7 +474,6 @@ div_7_13:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r14, -176(%rbp)
 	movq -104(%rbp), %r14
 	movq -112(%rbp), %r15
 	movq -48(%rbp), %r8
@@ -527,7 +523,6 @@ of_int_8:
 	call _my_malloc
 	movq $0, (%rax)
 	movq $0, 8(%rax)
-	movq %r8, -128(%rbp)
 	movq -96(%rbp), %r14
 	movq -104(%rbp), %r15
 	movq -40(%rbp), %r8
@@ -592,9 +587,12 @@ iter_9_6:
 	jmp skip_iter_8
 iter_9_0:
 	subq $0, %rsp
-	movq %rax, -152(%rbp)
-	movq %r15, %rax
+	movq %r14, -8(%rbp)
+	movq -112(%rbp), %r14
 	movq %r15, -144(%rbp)
+	movq -120(%rbp), %r15
+	movq %rax, -152(%rbp)
+	movq -144(%rbp), %rax
 skip_iter_8:
 	movq -152(%rbp), %rdi
 	cmpq $0, 8(%rdi)
@@ -605,12 +603,13 @@ iter_9_1:
 skip_iter_9:
 	subq $8, %rsp
 	subq $8, %rsp
-	movq -160(%rbp), %r15
+	movq -160(%rbp), %rsi
 	movq %rax, -144(%rbp)
-	movq %r15, %rax
-	movq -168(%rbp), %rsi
+	movq %rsi, %rax
+	movq -168(%rbp), %rax
 	movq %rdi, -152(%rbp)
-	movq %rsi, %rdi
+	movq %rax, %rdi
+	movq %rax, -168(%rbp)
 	pushq -8(%rbp)
 	call mul_6
 	addq $8, %rsp
@@ -619,9 +618,9 @@ skip_iter_9:
 	movq -176(%rbp), %rdi
 	movq %rax, -56(%rbp)
 	movq %rdi, %rax
-	movq -184(%rbp), %r15
+	movq -184(%rbp), %rsi
 	movq %rdi, -176(%rbp)
-	movq %r15, %rdi
+	movq %rsi, %rdi
 	pushq -8(%rbp)
 	call mul_6
 	addq $8, %rsp
@@ -641,34 +640,35 @@ skip_iter_9:
 	movq -200(%rbp), %rdi
 	movq %rax, -184(%rbp)
 	movq %rdi, %rax
-	movq -208(%rbp), %r15
+	movq -208(%rbp), %rsi
 	movq %rdi, -200(%rbp)
-	movq %r15, %rdi
+	movq %rsi, %rdi
 	pushq -8(%rbp)
 	call add_4
 	addq $8, %rsp
 	movq %rax, -208(%rbp)
-	movq -208(%rbp), %r15
-	movq %r15, %rdi
 	movq %r9, -64(%rbp)
-	movq -184(%rbp), %r9
-	movq %r9, %rsi
+	movq -208(%rbp), %r9
+	movq %r9, %rdi
+	movq %rbx, -88(%rbp)
+	movq -184(%rbp), %rbx
+	movq %rbx, %rsi
 	movq $1, %rax
 	call _my_compare
-	movq $1, (%r15)
+	movq $1, (%r9)
 	cmpl $0, %eax
 	jg iter_9_19
-	movq $0, 8(%r15)
+	movq $0, 8(%r9)
 	jmp iter_9_20
 iter_9_19:
-	movq $1, 8(%r15)
+	movq $1, 8(%r9)
 iter_9_20:
 	subq $8, %rsp
 	movq $16, %rdi
 	call _my_malloc
-	movq (%r15), %rdi
+	movq (%r9), %rdi
 	movq %rdi, (%rax)
-	movq 8(%r15), %rdi
+	movq 8(%r9), %rdi
 	movq %rdi, 8(%rax)
 	cmpq $0, 8(%rax)
 	je iter_9_14
@@ -677,10 +677,11 @@ iter_9_20:
 	call _my_malloc
 	movq $2, (%rax)
 	movq $0, 8(%rax)
-	movq %r15, -208(%rbp)
+	movq %r9, -208(%rbp)
 	movq %rax, %rax
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
+	movq -88(%rbp), %rbx
 	movq -64(%rbp), %r9
 	movq %rbp, %rsp
 	popq %rbp
@@ -688,9 +689,11 @@ iter_9_20:
 	jmp skip_iter_22
 iter_9_14:
 	subq $0, %rsp
+	movq %r9, -208(%rbp)
+	movq -64(%rbp), %r9
+	movq -88(%rbp), %rbx
 	movq %rax, -216(%rbp)
-	movq %r15, %rax
-	movq %r15, -208(%rbp)
+	movq -208(%rbp), %rax
 skip_iter_22:
 	movq -216(%rbp), %rdi
 	cmpq $0, 8(%rdi)
@@ -707,81 +710,85 @@ skip_iter_23:
 	movq $1, 8(%rax)
 	subq $8, %rsp
 	movq %rax, -208(%rbp)
-	movq -208(%rbp), %r15
-	cmpq $2, (%r15)
+	movq %r12, -96(%rbp)
+	movq -8(%rbp), %r12
+	movq %r13, -104(%rbp)
+	movq -208(%rbp), %r13
+	movq %r10, -72(%rbp)
+	cmpq $2, (%r13)
 	je iter_9_25
-	cmpq $3, (%r15)
+	cmpq $3, (%r13)
 	je iter_9_26
-	cmpq $4, (%r15)
+	cmpq $4, (%r13)
 	je iter_9_27
 	jmp _Error_gestion
 iter_9_25:
-	cmpq $2, (%r14)
+	cmpq $2, (%r12)
 	je iter_9_28
 	jmp _Error_gestion
 iter_9_28:
-	movq 8(%r14), %r9
-	addq 8(%r15), %r9
+	movq 8(%r12), %r10
+	addq 8(%r13), %r10
 	movq $16, %rdi
 	call _my_malloc
 	movq $2, (%rax)
-	movq %r9, 8(%rax)
-	movq %rax, %r9
+	movq %r10, 8(%rax)
+	movq %rax, %r10
 	jmp iter_9_31
 iter_9_26:
-	cmpq $3, (%r14)
+	cmpq $3, (%r12)
 	je iter_9_29
 	jmp _Error_gestion
 iter_9_29:
-	movq 8(%r15), %rsi
-	addq 8(%r14), %rsi
+	movq 8(%r13), %rsi
+	addq 8(%r12), %rsi
 	leaq 17(,%rsi,1), %rdi
 	call _my_malloc
 	movq $3, (%rax)
 	movq %rsi, 8(%rax)
-	leaq 16(%r14), %rsi
+	leaq 16(%r12), %rsi
 	leaq 16(%rax), %rdi
-	movq %rax, %r14
+	movq %rax, %r12
 	call _my_strcpy
-	leaq 16(%r15), %rsi
-	leaq 16(%r14), %rdi
+	leaq 16(%r13), %rsi
+	leaq 16(%r12), %rdi
 	call _my_strcat
-	movq %r14, %r9
+	movq %r12, %r10
 	jmp iter_9_31
 iter_9_27:
-	cmpq $4, (%r14)
+	cmpq $4, (%r12)
 	je iter_9_30
 	jmp _Error_gestion
 iter_9_30:
-	movq 8(%r15), %rsi
-	addq 8(%r14), %rsi
+	movq 8(%r13), %rsi
+	addq 8(%r12), %rsi
 	leaq 16(,%rsi,8), %rdi
 	call _my_malloc
 	movq $4, (%rax)
 	movq %rsi, 8(%rax)
-	cmpq $0, 8(%r14)
+	cmpq $0, 8(%r12)
 	je iter_9_34
 	xorq %rdi, %rdi
 iter_9_32:
-	movq 16(%r14,%rdi,8), %rsi
+	movq 16(%r12,%rdi,8), %rsi
 	movq %rsi, 16(%rax,%rdi,8)
 	incq %rdi
-	cmpq %rdi, 8(%r14)
+	cmpq %rdi, 8(%r12)
 	jg iter_9_32
 iter_9_34:
-	cmpq $0, 8(%r15)
+	cmpq $0, 8(%r13)
 	je iter_9_35
-	movq %rdi, %r14
+	movq %rdi, %r12
 	xorq %rdi, %rdi
 iter_9_33:
-	movq 16(%r15,%rdi,8), %rsi
-	movq %rsi, 16(%rax,%r14,8)
+	movq 16(%r13,%rdi,8), %rsi
+	movq %rsi, 16(%rax,%r12,8)
 	incq %rdi
-	incq %r14
-	cmpq %rdi, 8(%r15)
+	incq %r12
+	cmpq %rdi, 8(%r13)
 	jg iter_9_33
 iter_9_35:
-	movq %rax, %r9
+	movq %rax, %r10
 	jmp iter_9_31
 iter_9_31:
 	subq $8, %rsp
@@ -791,9 +798,9 @@ iter_9_31:
 	subq $8, %rsp
 	movq -256(%rbp), %rdi
 	movq %rdi, %rax
-	movq -264(%rbp), %r15
+	movq -264(%rbp), %rsi
 	movq %rdi, -256(%rbp)
-	movq %r15, %rdi
+	movq %rsi, %rdi
 	pushq -8(%rbp)
 	call sub_5
 	addq $8, %rsp
@@ -820,18 +827,18 @@ iter_9_31:
 	movq -280(%rbp), %rdi
 	movq %rax, -272(%rbp)
 	movq %rdi, %rax
-	movq -288(%rbp), %r15
+	movq -288(%rbp), %rsi
 	movq %rdi, -280(%rbp)
-	movq %r15, %rdi
+	movq %rsi, %rdi
 	pushq -8(%rbp)
 	call mul_6
 	addq $8, %rsp
 	movq -272(%rbp), %rdi
 	movq %rax, -288(%rbp)
 	movq %rdi, %rax
-	movq -288(%rbp), %r15
+	movq -288(%rbp), %rsi
 	movq %rdi, -272(%rbp)
-	movq %r15, %rdi
+	movq %rsi, %rdi
 	pushq -8(%rbp)
 	call mul_6
 	addq $8, %rsp
@@ -844,23 +851,28 @@ iter_9_31:
 	call add_4
 	addq $8, %rsp
 	movq %rax, -296(%rbp)
-	movq %r9, %rax
+	movq %r10, %rax
 	movq -240(%rbp), %rdi
 	movq %rdi, %rdi
-	movq -248(%rbp), %r15
-	movq %r15, %rsi
-	movq -272(%rbp), %rsi
+	movq -248(%rbp), %rsi
+	movq %rsi, %rsi
+	movq -272(%rbp), %rax
 	movq %rdx, -24(%rbp)
-	movq %rsi, %rdx
+	movq %rax, %rdx
 	movq -296(%rbp), %rdx
 	movq %rcx, -32(%rbp)
 	movq %rdx, %rcx
+	movq %rax, -272(%rbp)
 	pushq -8(%rbp)
 	call iter_9
 	addq $8, %rsp
 	movq %rax, %rax
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
+	movq -88(%rbp), %rbx
+	movq -96(%rbp), %r12
+	movq -104(%rbp), %r13
+	movq -72(%rbp), %r10
 	movq -64(%rbp), %r9
 	movq %rbp, %rsp
 	popq %rbp
@@ -872,6 +884,10 @@ iter_9_31:
 	movq $0, 8(%rax)
 	movq -112(%rbp), %r14
 	movq -120(%rbp), %r15
+	movq -88(%rbp), %rbx
+	movq -96(%rbp), %r12
+	movq -104(%rbp), %r13
+	movq -72(%rbp), %r10
 	movq -64(%rbp), %r9
 	movq %rbp, %rsp
 	popq %rbp
