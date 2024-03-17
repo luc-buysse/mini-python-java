@@ -1,4 +1,5 @@
 #!/bin/bash
-
-exec java -cp ./lib/java-cup-11a-runtime.jar:./mini-python-java.jar mini_python.Main $@
+D="$( cd "$(dirname "$0")" ; pwd -P )"
+exec java -cp $D/lib/java-cup-11a-runtime.jar:$D/bin mini_python.Main $@
+#exec java -cp ./lib/java-cup-11a-runtime.jar:./bin/mini_python mini_python.Main $@
 
